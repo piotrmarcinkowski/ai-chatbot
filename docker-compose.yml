@@ -1,0 +1,19 @@
+include:
+  - persistence/mongodb/docker-compose.yml
+services:
+  ai-chatbot:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - ai-chatbot-mongodb
+    healthcheck:
+      # TODO: Verify if this works
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    env_file:
+      - .env

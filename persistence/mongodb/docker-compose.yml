@@ -1,0 +1,12 @@
+services:
+  ai-chatbot-mongodb:
+    image: mongo:8.0.6
+    container_name: ai-chatbot-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ai-chatbot-mongodb-chat-history:/data/db
+
+volumes:
+  ai-chatbot-mongodb-chat-history:

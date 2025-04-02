@@ -1,12 +1,19 @@
-# AI chatbot
-AI chatbot prototype
+# ai-chatbot
+General purpose AI chatbot.
 
-# Build
-```
-docker build -t ai-chatbot .
-```
+# Configuration
+Create `.env` file in the project's root folder basing on the attached [env.example](env.example) file.
 
 # Run
 ```
-docker run --rm -p 8501:8501 --env-file .env --name ai-chatbot ai-chatbot
-````
+docker compose up
+```
+
+# Chat
+Once the app is started look for the following URL in the output and open the link in a web browser.
+
+```
+You can now view your Streamlit app in your browser.
+ai-chatbot-1        |
+ai-chatbot-1        |   URL: http://0.0.0.0:8501
+```
