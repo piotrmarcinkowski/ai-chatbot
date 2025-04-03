@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run ai-chatbot as Streamlit App",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/usr/local/bin/streamlit",
+      "args": [
+        "run",
+        "app/ai-chatbot.py",
+        "--server.port=8501",
+        "--server.address=0.0.0.0"
+      ],
+      "justMyCode": false
+    }
+  ]
+}

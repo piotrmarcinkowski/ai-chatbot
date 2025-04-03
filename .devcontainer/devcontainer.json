@@ -1,0 +1,21 @@
+{
+    "name": "ai-chatbot-devcontainer",
+    "dockerComposeFile": ["../docker-compose.yml", "docker-compose.dev.yml"],
+    "service": "ai-chatbot",
+    "workspaceFolder": "/ai-chatbot",
+    "mounts": [
+      "source=${localWorkspaceFolder},target=/ai-chatbot,type=bind",
+      "source=${localWorkspaceFolder}/.devcontainer/.vscode,target=/ai-chatbot/.vscode,type=bind"
+    ],
+    "remoteEnv": {
+        "STREAMLIT_SERVER_HEADLESS": "true"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.debugpy"
+            ]
+        }
+    }
+  }

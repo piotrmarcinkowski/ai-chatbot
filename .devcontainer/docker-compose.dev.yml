@@ -1,0 +1,7 @@
+services:
+  ai-chatbot:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      target: ai-chatbot-dev
+
