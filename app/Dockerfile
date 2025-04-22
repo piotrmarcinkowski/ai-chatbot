@@ -1,4 +1,4 @@
-FROM python:3.9 as ai-chatbot-base
+FROM python:3.12 as ai-chatbot-base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
     curl

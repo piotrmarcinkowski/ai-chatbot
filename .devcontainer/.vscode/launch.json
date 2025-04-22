@@ -5,10 +5,11 @@
       "name": "Run ai-chatbot as Streamlit App",
       "type": "debugpy",
       "request": "launch",
-      "program": "/usr/local/bin/streamlit",
+      "module": "streamlit",
+      "cwd": "${workspaceFolder}/app",
       "args": [
         "run",
-        "app/ai-chatbot.py",
+        "ai-chatbot.py",
         "--server.port=8501",
         "--server.address=0.0.0.0"
       ],
