@@ -1,57 +1,37 @@
 import streamlit as st
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chat_models import ChatOpenAI
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 import os
 import sys
 
+from persistence import load_knowledge_vectors
+from llm import load_llm
 
-# Validate OPENAI_API_KEY
-if not os.getenv("OPENAI_API_KEY"):
-    st.error("OPENAI_API_KEY environment variable is not defined.")
-    sys.exit(1)
+vectors = load_knowledge_vectors()
 
-my_api_key = os.getenv("OPENAI_API_KEY")
+print("Creating llm instance")
+llm = load_llm()
+print("Creating chain")
+chain = load_qa_chain(llm, chain_type="stuff")
 
-st.header("My AI Chatbot")
+st.set_page_config(page_title="AI Chatbot", layout="wide")
 
 with st.sidebar:
-    st.title("Upload text file")
-    file = st.file_uploader("Choose a file and chat with the AI", type=["txt"])
+    st.header("Previous chats")
+    st.write("- To be implemented")
 
-if file is not None:
-    text = file.read().decode("utf-8")
-    st.write(text)
+st.title("AI Chatbot")
+chat_container = st.container()
 
-    # Split text into sentences
-    splitter = RecursiveCharacterTextSplitter(
-        separators=[".", "!", "?", "\n"],
-        chunk_size=1000
-    )
-    sentences = splitter.split_text(text)
+with st.form(key="chat_form"):
+    # user_input = st.text_area("Type your message:", height=100, max_chars=500)
+    default_text = "Hello, introduce yourself"
+    user_input = st.text_area("Type your message:", value=default_text, height=100, max_chars=500)
+    submit_button = st.form_submit_button("Send")
 
-    # Create embeddings
-    embeddings = OpenAIEmbeddings(openai_api_key=my_api_key)
-
-    # Create vector store
-    vectors = FAISS.from_texts(sentences, embeddings)
-
-    # Get user input
-    user_input = st.text_input("Start conversation with AI chatbot: ")
-
-    if user_input:
+if submit_button and user_input:
+    with chat_container:
+        st.write(f"**You:** {user_input}")
         match = vectors.similarity_search(user_input)
-
-        llm = ChatOpenAI(
-            openai_api_key=my_api_key,
-            temperature=0.5,
-            max_tokens=1000,
-            model_name="gpt-3.5-turbo"
-        )
-
-        chain = load_qa_chain(llm, chain_type="stuff")
         response = chain.run(input_documents = match, question=user_input)
+        st.write(f"**Bot:** {response}")
 
-        st.write(response)
