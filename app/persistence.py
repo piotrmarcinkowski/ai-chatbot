@@ -1,10 +1,8 @@
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from llm import load_embeddings
 
-def load_knowledge_vectors():
-    embeddings = load_embeddings()
+def load_knowledge_vectors(embeddings):
     return _load_test_knowledge_vectors(embeddings)
 
 def _load_test_knowledge_vectors(embeddings):
