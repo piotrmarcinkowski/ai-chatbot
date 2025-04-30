@@ -1,8 +1,6 @@
 from langchain.chains.question_answering import load_qa_chain
-import os
-import sys
 
-from persistence import load_knowledge_vectors
+from knowledge import load_knowledge_vectors
 from llm import init_llm
 from llm import init_embeddings
 

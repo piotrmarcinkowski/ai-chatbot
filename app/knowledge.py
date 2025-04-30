@@ -2,6 +2,12 @@ from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 
+class Knowledge:
+    def __init__(self, embeddings):
+        """Initialize the Knowledge class and load knowledge vectors."""
+        self.embeddings = embeddings
+        self.vectors = load_knowledge_vectors(self.embeddings)
+
 def load_knowledge_vectors(embeddings):
     return _load_test_knowledge_vectors(embeddings)
 
@@ -9,6 +15,8 @@ def _load_test_knowledge_vectors(embeddings):
     print("Loading test knowledge with embeddings:" + embeddings.model)
     sentences = load_test_knowledge_sentences()
     print("Creating FAISS vector store")
+    # TODO: Replace FAISS with chromadb
+    # TODO: Add storing to file - load from file if available, create a file if not there yet
     vectors = FAISS.from_texts(sentences, embeddings)
     return vectors
 
@@ -28,3 +36,11 @@ Kapsel jest czarny, a Kufelek jest brązowy. Kapsel ma 3 lata, a Kufelek ma 2 la
     sentences = splitter.split_text(knowledge)
     return sentences
 
+chat_history = {}
+
+# chat_history = MongoDBChatMessageHistory(
+#     session_id="test_session",
+#     connection_string=config.get("mongodb_connection_string"),
+#     database_name="ai_chatbot_db",
+#     collection_name="chat_history",
+# )
