@@ -7,7 +7,9 @@
       "source=${localWorkspaceFolder},target=/ai-chatbot,type=bind",
       "source=${localWorkspaceFolder}/.devcontainer/.vscode,target=/ai-chatbot/.vscode,type=bind"
     ],
+    "remoteUser": "chatbot",
     "remoteEnv": {
+        // This removes the email prompt on streamlit startup
         "STREAMLIT_SERVER_HEADLESS": "true"
     },
     "customizations": {

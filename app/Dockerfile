@@ -3,12 +3,18 @@ FROM python:3.12 as ai-chatbot-base
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
     curl
 
+ARG USER=chatbot
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g ${GID} ${USER} && \
+    useradd -m -u ${UID} -g ${GID} ${USER}
+
 WORKDIR /app
 
 COPY requirements.txt .
 
 RUN pip3 install -r requirements.txt
-
 
 
 # Production image
@@ -20,6 +26,8 @@ COPY . .
 EXPOSE 8501
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+USER ${USER}
 
 ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
@@ -35,5 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # while configuring the devcontainer
 
 EXPOSE 8501
+
+USER ${USER}
 
 CMD [ "sleep", "infinity" ]
