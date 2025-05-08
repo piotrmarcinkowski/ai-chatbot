@@ -1,0 +1,30 @@
+# Chatbot memory
+
+## References
+- [LangChain Essentials - Conversational Memory for OpenAI - LangChain](https://github.com/aurelio-labs/langchain-course/blob/main/chapters/04-chat-memory.ipynb)
+- [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/)
+- [Youtube - Long term memory & Self improving](https://www.youtube.com/watch?v=7LWTZqksmSg&ab_channel=AIJason)
+
+
+## Requirements
+
+Referring to past conversations, bringing up broader context.
+
+Sample user prompts that should be supported:
+- Can we go back to yesterday's conversation about ...
+- Do you remember that idea we talked about some time ago? ...
+- Remind me what things we were supposed to check in order to...
+- Search the chat about ...
+- Have we talked about this before?
+
+## Implementation decisions
+
+- Messages should be stored in a vector database to enable fast context retrieval for user queries.
+- Converting message text to vector representation requires embeddings. For that OpenAI embeddings will be used but it should be possible to change embeddings provider in the future.
+- Since the embeddings can change in the future the messages should also be stored in plain text so the conversion to vector form can be repeated at any time.
+- For certain requirements the stored messages should include the following metadata: 
+timestamp, voice file url,
+
+## MongoDB
+
+Initial implementation was done around [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/#usage) class to store chat message history in a Mongodb database.

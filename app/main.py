@@ -23,7 +23,7 @@ def draw_ui():
     if submit_button and user_input:
         with chat_container:
             st.write(f"**You:** {user_input}")
-            response = chatbot.search_local_knowledge(user_input)
+            response = chatbot.get_response(user_input)
             st.write(f"**Bot:** {response}")
 
 draw_ui()

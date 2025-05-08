@@ -1,3 +1,5 @@
 {
-    "mongodb_connection_string": "mongodb://ai-chatbot-mongodb:27017"
+    "mongodb_connection_string": "mongodb://ai-chatbot-mongodb:27017",
+    "mongodb_chat_history_db_name": "mongo_db",
+    "mongodb_chat_history_collection_name": "chat_history"
 }
