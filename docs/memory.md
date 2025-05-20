@@ -25,6 +25,13 @@ Sample user prompts that should be supported:
 - For certain requirements the stored messages should include the following metadata: 
 timestamp, voice file url,
 
-## MongoDB
+## LangChain way of implementing message history storage
+https://python.langchain.com/v0.2/docs/how_to/message_history/
 
+### MongoDB
 Initial implementation was done around [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/#usage) class to store chat message history in a Mongodb database.
+
+Refer to: [app/chat_history.py](../app/chat_history.py)
+
+### Vector database
+How to store messages to both databases - regular and vector databases
