@@ -9,7 +9,7 @@
       "cwd": "${workspaceFolder}/app",
       "args": [
         "run",
-        "main.py",
+        "gui.py",
         "--server.port=8501",
         "--server.address=0.0.0.0"
       ],
