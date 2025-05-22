@@ -48,8 +48,6 @@ See the following commands in the command palette (Crtl+Shift+P):
 - Dev Containers: Show Container Log
 - Dev Containers Developer: Show All Logs...
 
+## Issues
 
-## To do list
-TODO: Implement chat history: https://github.com/aurelio-labs/langchain-course/blob/main/chapters/04-chat-memory.ipynb
-TODO: Tool "if there is a valuable information in user's sentence store it as a fact". Figure out few methods as carrying important info. Np. User: "It's important what I'm going to say ", 
-TODO: Tool "what have we talked about before?", "when did we talk about vacation plans?"
+All issues are stored in Github Issues. See more: [./docs/github-issues-extension.md](./docs/github-issues-extension.md)

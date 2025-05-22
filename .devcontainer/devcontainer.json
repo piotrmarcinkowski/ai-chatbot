@@ -18,7 +18,8 @@
                 "ms-python.python",
                 "ms-python.debugpy",
                 "ms-python.pylint",
-                "hediet.vscode-drawio"
+                "hediet.vscode-drawio",
+                "GitHub.vscode-pull-request-github"
             ]
         }
     }
