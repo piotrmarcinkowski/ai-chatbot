@@ -12,6 +12,27 @@ history_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
+_chat_history = {}
+
+def _provide_history_instance(session_id):
+    """
+    Returns a MongoDBChatMessageHistory instance for the given session ID.
+    """
+    history_instance = _chat_history.get(session_id)
+    if history_instance is None:
+        print(f"_provide_history_instance: Creating MongoDBChatMessageHistory instance for session_id: {session_id}")
+        history_instance = MongoDBChatMessageHistory(
+            session_id=session_id,
+            connection_string=config.get("mongodb_connection_string"),
+            database_name=config.get("mongodb_chat_history_db_name"),
+            collection_name=config.get("mongodb_chat_history_collection_name"),
+        )
+        _chat_history[session_id] = history_instance
+    print(f"_provide_history_instance: Returning history instance for session_id: {session_id}")
+    return history_instance
+    
+    
+
 class ChatHistory:
     """
     Manages chat history, archives all messages and provides a way to quickly access 
@@ -23,22 +44,32 @@ class ChatHistory:
         """
         Initializes the memory subsystem with the given LLM.
         """
-        self.chat_history = {}
+        print("ChatHistory.__init__")
 
     def manage_chat_history(self, pipeline):
         """
-        Enables chat history management for the given pipeline. Returns a new pipeline
-        that wraps the original pipeline.
+        Enables chat history management for the given pipeline. 
+        :param pipeline: The original pipeline to be wrapped.
+        :return: A new pipeline that wraps the original pipeline and manages chat history.
         """
+        print("ChatHistory.manage_chat_history: creating RunnableWithMessageHistory")
         return RunnableWithMessageHistory(
             pipeline,
-            lambda session_id: MongoDBChatMessageHistory(
-                session_id=session_id,
-                connection_string=config.get("mongodb_connection_string"),
-                database_name=config.get("mongodb_chat_history_db_name"),
-                collection_name=config.get("mongodb_chat_history_collection_name"),
-            ),
+            _provide_history_instance,
             input_messages_key="user_input",
             history_messages_key="history",
         )
+   
+    def get_chat_history(self, session_id):
+        """
+        Retrieves the chat history for the given session ID.
+        If no history is found, returns an empty list.
+        :param session_id: The session ID for which to retrieve chat history.
+        :return: A list of chat messages for the given session ID.
+        """
+        print(f"ChatHistory.get_chat_history: Retrieving chat history for session_id: {session_id}")
+        if session_id not in _chat_history:
+            print(f"ChatHistory.get_chat_history: No chat history found for session_id: {session_id}")
+            return []
+        return _chat_history[session_id].messages
    

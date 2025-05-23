@@ -3,7 +3,9 @@ from chatbot import Chatbot
 
 def draw_ui():
     if "chatbot" not in st.session_state:
-        st.session_state.chatbot = Chatbot()
+        new_chatbot = Chatbot()
+        new_chatbot.start_new_chat()
+        st.session_state.chatbot = new_chatbot
     chatbot = st.session_state.chatbot
             
     st.set_page_config(page_title="AI Chatbot", layout="wide")
@@ -13,7 +15,13 @@ def draw_ui():
         st.write("- To be implemented")
 
     st.title("AI Chatbot")
-    chat_container = st.container()
+    chat_container = st.container(height=600)
+    with chat_container:
+        for message in chatbot.get_chat_history():
+            if message.type == "human":
+                st.write(f"**You:** {message.content}")
+            else:
+                st.write(f"**AI:** {message.content}")
 
     with st.form(key="chat_form"):
         default_text = "Hello, introduce yourself"
@@ -22,8 +30,12 @@ def draw_ui():
 
     if submit_button and user_input:
         with chat_container:
+            print(f"> Human: {user_input}")
             st.write(f"**You:** {user_input}")
-            response = chatbot.get_response(user_input)
-            st.write(f"**Bot:** {response}")
+            response = chatbot.process_user_input(user_input)
+
+            print(f"< AI: {response.content}")
+            print(f"< AI response details: {response}")
+            st.write(f"**AI:** {response.content}")
 
 draw_ui()
