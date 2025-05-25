@@ -1,20 +1,11 @@
 import streamlit as st
-from chatbot import Chatbot
 
-def draw_ui():
-    if "chatbot" not in st.session_state:
-        new_chatbot = Chatbot()
-        new_chatbot.start_new_chat()
-        st.session_state.chatbot = new_chatbot
-    chatbot = st.session_state.chatbot
-            
-    st.set_page_config(page_title="AI Chatbot", layout="wide")
+from gui.model import chatbot_instance
 
-    with st.sidebar:
-        st.header("Previous chats")
-        st.write("- To be implemented")
-
-    st.title("AI Chatbot")
+def draw_chat_ui():
+    st.markdown("# 💬 Chat")
+    chatbot = chatbot_instance()
+    
     chat_container = st.container(height=600)
     with chat_container:
         for message in chatbot.get_chat_history():
@@ -26,7 +17,7 @@ def draw_ui():
     with st.form(key="chat_form"):
         default_text = "Hello, introduce yourself"
         user_input = st.text_area("Type your message:", value=default_text, height=100, max_chars=500)
-        submit_button = st.form_submit_button("Send")
+        submit_button = st.form_submit_button("Send", type="primary")
 
     if submit_button and user_input:
         with chat_container:
@@ -37,5 +28,6 @@ def draw_ui():
             print(f"< AI: {response.content}")
             print(f"< AI response details: {response}")
             st.write(f"**AI:** {response.content}")
+            
 
-draw_ui()
+draw_chat_ui()
