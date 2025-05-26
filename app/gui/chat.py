@@ -4,8 +4,11 @@ from gui.model import chatbot_instance
 
 def draw_chat_ui():
     st.markdown("# 💬 Chat")
+
+    # Initialize the chatbot instance
     chatbot = chatbot_instance()
-    
+
+    # Main chat container
     chat_container = st.container(height=600)
     with chat_container:
         for message in chatbot.get_chat_history():
@@ -14,11 +17,12 @@ def draw_chat_ui():
             else:
                 st.write(f"**AI:** {message.content}")
 
-    with st.form(key="chat_form"):
-        default_text = "Hello, introduce yourself"
-        user_input = st.text_area("Type your message:", value=default_text, height=100, max_chars=500)
+    # Input form for user messages
+    with st.form(key="chat_form", clear_on_submit=True, enter_to_submit=True):
+        user_input = st.text_area("Type your message:", value=None, height=100, max_chars=500)
         submit_button = st.form_submit_button("Send", type="primary")
 
+    # Handle form submission
     if submit_button and user_input:
         with chat_container:
             print(f"> Human: {user_input}")
@@ -28,6 +32,5 @@ def draw_chat_ui():
             print(f"< AI: {response.content}")
             print(f"< AI response details: {response}")
             st.write(f"**AI:** {response.content}")
-            
 
 draw_chat_ui()
