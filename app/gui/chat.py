@@ -11,7 +11,7 @@ def draw_chat_ui():
     # Main chat container
     chat_container = st.container(height=600)
     with chat_container:
-        for message in chatbot.get_chat_history():
+        for message in chatbot.get_current_chat_messages():
             if message.type == "human":
                 st.write(f"**You:** {message.content}")
             else:
