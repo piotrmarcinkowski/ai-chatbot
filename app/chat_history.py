@@ -2,12 +2,14 @@ from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from config import config
+from pymongo import MongoClient
+import time
 
 # TODO: Make this a structured prompt with bool result indicating if LLM knew the answer
 history_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "Use the following pieces of history to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer."),
-        MessagesPlaceholder(variable_name="history"),
+        ("system", "Use the following pieces of chat history to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer."),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{user_input}"),
     ]
 )
@@ -23,7 +25,6 @@ class ChatHistory:
         """
         Initializes the memory subsystem with the given LLM.
         """
-        print("ChatHistory.__init__")
         self.history_cache = {}
 
     def manage_chat_history(self, pipeline):
@@ -37,8 +38,39 @@ class ChatHistory:
             pipeline,
             _provide_history_instance,
             input_messages_key="user_input",
-            history_messages_key="history",
+            history_messages_key="chat_history",
         )
+    
+    def get_chat_session_ids(self, limit=None):
+        """
+        Retrieves a list of chat session IDs stored in the history.
+        :param limit: Optional limit on the number of session IDs to return. Most recent sessions are returned first.
+        :return: A list of chat session IDs.
+        """
+        print("ChatHistory.get_chat_session_ids: Retrieving chat session IDs")
+        
+        connection_string = config.get("mongodb_connection_string")
+        database_name = config.get("mongodb_chat_history_db_name")
+        collection_name = config.get("mongodb_chat_history_collection_name")
+
+        print(f"ChatHistory.get_chat_session_ids: Retrieving session IDs from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
+        start_time = time.time()
+        client = MongoClient(connection_string)
+        db = client[database_name]
+        collection = db[collection_name]
+
+        # Retrieve all unique SessionId values
+        session_ids = list(
+            collection.distinct("SessionId")
+        )
+        elapsed_time = time.time() - start_time
+        print(f"ChatHistory.get_chat_session_ids: Database retrieval took {elapsed_time:.4f} seconds")
+        print(f"ChatHistory.get_chat_session_ids: Found {len(session_ids)} session IDs")
+
+        if limit is not None:
+            session_ids = session_ids[:limit]
+        print(f"ChatHistory.get_chat_session_ids: Returning {len(session_ids)} session IDs")
+        return session_ids
    
     def get_chat_history(self, session_id):
         """

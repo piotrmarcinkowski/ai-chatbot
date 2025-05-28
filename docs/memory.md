@@ -33,5 +33,21 @@ Initial implementation was done around [MongoDBChatMessageHistory](https://pytho
 
 Refer to: [app/chat_history.py](../app/chat_history.py)
 
+Chat messages are stored as a separate documents in chat/chat_history collection in mongodb database.
+
+Sample document looks like this:
+```json
+{
+  "_id": {
+    "$oid": "68362bb02f4a7dd6650e7b40"
+  },
+  "SessionId": "254751de-538a-463f-a8a9-b69bfac3e560",
+  "History": "{\"type\": \"human\", \"data\": {\"content\": \"How do you do?\", \"additional_kwargs\": {}, \"response_metadata\": {}, \"type\": \"human\", \"name\": null, \"id\": null, \"example\": false}}"
+}
+```
+Database can be browsed with vscode mongodb extension that is available within devcontainer.
+
+![vscode mongodb extension](./img/vscode-mongodb-extension.png)
+
 ### Vector database
 How to store messages to both databases - regular and vector databases

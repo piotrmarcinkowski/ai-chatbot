@@ -19,7 +19,8 @@
                 "ms-python.debugpy",
                 "ms-python.pylint",
                 "hediet.vscode-drawio",
-                "GitHub.vscode-pull-request-github"
+                "GitHub.vscode-pull-request-github",
+                "mongodb.mongodb-vscode"
             ]
         }
     }
