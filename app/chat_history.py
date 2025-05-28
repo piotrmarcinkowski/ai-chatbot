@@ -41,11 +41,11 @@ class ChatHistory:
             history_messages_key="chat_history",
         )
     
-    def get_chat_session_ids(self, limit=None):
+    def get_archived_chat_sessions(self, limit=None):
         """
-        Retrieves a list of chat session IDs stored in the history.
-        :param limit: Optional limit on the number of session IDs to return. Most recent sessions are returned first.
-        :return: A list of chat session IDs.
+        Retrieves a list of archived chat sessions.
+        :param limit: Optional limit on the number of sessions to return. Most recent sessions are returned first.
+        :return: A list of archived chat sessions.
         """
         print("ChatHistory.get_chat_session_ids: Retrieving chat session IDs")
         
@@ -60,17 +60,31 @@ class ChatHistory:
         collection = db[collection_name]
 
         # Retrieve all unique SessionId values
-        session_ids = list(
-            collection.distinct("SessionId")
-        )
+        # Aggregate to get the first message for each unique SessionId
+        pipeline = [
+            {"$sort": {"_id": 1}},  # Ensure earliest message comes first
+            {
+            "$group": {
+                "_id": "$SessionId",
+                "first_message": {"$first": "$History"},
+            }
+            },
+            {"$sort": {"_id": -1}},  # Most recent sessions first by SessionId (UUIDs are sortable)
+        ]
+        results = list(collection.aggregate(pipeline))
+        session_infos = [
+            {"session_id": doc["_id"], "first_message": doc["first_message"]}
+            for doc in results
+        ]
+        chat_sessions = session_infos
         elapsed_time = time.time() - start_time
         print(f"ChatHistory.get_chat_session_ids: Database retrieval took {elapsed_time:.4f} seconds")
-        print(f"ChatHistory.get_chat_session_ids: Found {len(session_ids)} session IDs")
+        print(f"ChatHistory.get_chat_session_ids: Found {len(chat_sessions)} session IDs")
 
         if limit is not None:
-            session_ids = session_ids[:limit]
-        print(f"ChatHistory.get_chat_session_ids: Returning {len(session_ids)} session IDs")
-        return session_ids
+            chat_sessions = chat_sessions[:limit]
+        print(f"ChatHistory.get_chat_session_ids: Returning {len(chat_sessions)} session IDs")
+        return chat_sessions
    
     def get_chat_history(self, session_id):
         """
