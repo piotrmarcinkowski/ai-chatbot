@@ -41,19 +41,19 @@ class ChatHistory:
             history_messages_key="chat_history",
         )
     
-    def get_archived_chat_sessions(self, limit=None):
+    def get_archived_chat_session_list(self, limit=None):
         """
         Retrieves a list of archived chat sessions.
         :param limit: Optional limit on the number of sessions to return. Most recent sessions are returned first.
         :return: A list of archived chat sessions.
         """
-        print("ChatHistory.get_chat_session_ids: Retrieving chat session IDs")
+        print("ChatHistory.get_archived_chat_session_list: Retrieving archived chat sessions")
         
         connection_string = config.get("mongodb_connection_string")
         database_name = config.get("mongodb_chat_history_db_name")
         collection_name = config.get("mongodb_chat_history_collection_name")
 
-        print(f"ChatHistory.get_chat_session_ids: Retrieving session IDs from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
+        print(f"ChatHistory.get_archived_chat_session_list: Retrieving archived sessions from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
         start_time = time.time()
         client = MongoClient(connection_string)
         db = client[database_name]
@@ -78,12 +78,12 @@ class ChatHistory:
         ]
         chat_sessions = session_infos
         elapsed_time = time.time() - start_time
-        print(f"ChatHistory.get_chat_session_ids: Database retrieval took {elapsed_time:.4f} seconds")
-        print(f"ChatHistory.get_chat_session_ids: Found {len(chat_sessions)} session IDs")
+        print(f"ChatHistory.get_archived_chat_session_list: Database retrieval took {elapsed_time:.4f} seconds")
+        print(f"ChatHistory.get_archived_chat_session_list: Found {len(chat_sessions)} archived sessions")
 
         if limit is not None:
             chat_sessions = chat_sessions[:limit]
-        print(f"ChatHistory.get_chat_session_ids: Returning {len(chat_sessions)} session IDs")
+        print(f"ChatHistory.get_archived_chat_session_list: Returning {len(chat_sessions)} archived sessions")
         return chat_sessions
    
     def get_chat_history(self, session_id):
