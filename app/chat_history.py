@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from config import config
 from pymongo import MongoClient
 import time
+from langchain_core.messages import BaseMessage
 
 # TODO: Make this a structured prompt with bool result indicating if LLM knew the answer
 history_prompt = ChatPromptTemplate.from_messages(
@@ -101,6 +102,24 @@ class ChatHistory:
    
 chat_history = ChatHistory()
 
+class CustomMongoDBChatMessageHistory(MongoDBChatMessageHistory):
+    """
+    MongoDBChatMessageHistory with customized message handling function what allows 
+    intercepting messages that are being passed to storage. 
+    Just before the message is stored, it can be modified or logged.
+    """
+    def __init__(self, session_id, *args, **kwargs):
+        print(f"CustomMongoDBChatMessageHistory: Initializing with session_id: {session_id}")
+        super().__init__(session_id=session_id, *args, **kwargs)
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Append metadata to the message and store it in the database."""
+        message.additional_kwargs = {
+            "timestamp": int(time.time() * 1000),  # Store timestamp in milliseconds
+            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # ISO 8601 UTC format
+        }
+        super().add_message(message)
+
 def _provide_history_instance(session_id):
     """
     Returns a MongoDBChatMessageHistory instance for the given session ID.
@@ -108,7 +127,7 @@ def _provide_history_instance(session_id):
     history_instance = chat_history.history_cache.get(session_id)
     if history_instance is None:
         print(f"_provide_history_instance: Creating MongoDBChatMessageHistory instance for session_id: {session_id}")
-        history_instance = MongoDBChatMessageHistory(
+        history_instance = CustomMongoDBChatMessageHistory(
             session_id=session_id,
             connection_string=config.get("mongodb_connection_string"),
             database_name=config.get("mongodb_chat_history_db_name"),
