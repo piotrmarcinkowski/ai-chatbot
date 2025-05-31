@@ -1,6 +1,6 @@
-from llm import init_llm
-from llm import init_embeddings
-from chat_history import history_prompt, chat_history
+from model.llm import init_llm
+from model.llm import init_embeddings
+from model.chat_history import ChatHistorySaver, ChatArchive, init_chat_history_saver, init_chat_archive, init_chat_vector_store, history_prompt
 import uuid
 
 class Chatbot:
@@ -21,9 +21,17 @@ class Chatbot:
         print("Chatbot: Creating pipeline")
         self.pipeline = history_prompt | self.llm
 
-        print("Chatbot: Initializing memory subsystem")
-        self.chat_history = chat_history
-        self.pipeline = self.chat_history.manage_chat_history(self.pipeline)
+        print("Chatbot: Initializing chat history")
+        self.chat_history_saver : ChatHistorySaver = init_chat_history_saver()
+        self.pipeline = self.chat_history_saver.manage_chat_history(self.pipeline)
+
+        self.chat_archive : ChatArchive = init_chat_archive()
+
+        self.chat_vector_store = init_chat_vector_store(self.embeddings)
+        # Link the chat history saver to the chat vector store so that
+        # every new messages added to the chat gets immediately added
+        # to the vector store
+        self.chat_history_saver.add_new_message_callback(self.chat_vector_store.add_message)
 
         print("Chatbot: Initilization complete")
 
@@ -47,5 +55,5 @@ class Chatbot:
         Retrieves the messages for the current chat session.
         """
         print("Chatbot.get_current_chat_messages: Chat messages requested for session:", self.chat_session_id)
-        return self.chat_history.get_chat_history(self.chat_session_id)
+        return self.chat_archive.get_chat_messages(self.chat_session_id)
 

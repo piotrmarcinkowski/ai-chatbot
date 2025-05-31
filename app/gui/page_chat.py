@@ -1,6 +1,6 @@
 import streamlit as st
 
-from gui.model import chatbot_instance
+from gui.view_model import chatbot_instance
 
 def draw_chat_ui():
     st.markdown("# 💬 Chat")

@@ -1,5 +1,5 @@
 import streamlit as st
-from chatbot import Chatbot
+from model.chatbot import Chatbot
 
 def chatbot_instance():
     """
