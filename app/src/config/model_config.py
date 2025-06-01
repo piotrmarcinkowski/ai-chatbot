@@ -9,7 +9,7 @@ def get_config_json_path():
     config_path = os.path.join(current_dir, "config.json")
     return config_path
 
-class Config:
+class ModelConfig:
     def __init__(self, config_file=get_config_json_path()):
         """Initialize the Config class and load the configuration from a JSON file."""
 
@@ -19,4 +19,4 @@ class Config:
     def get(self, key, default=None):
         return self.config.get(key, default)
 
-config = Config()
+model_config = ModelConfig()

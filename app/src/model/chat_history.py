@@ -1,7 +1,7 @@
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from config import config
+from config.model_config import model_config
 from pymongo import MongoClient
 import time
 from langchain_core.messages import BaseMessage
@@ -63,9 +63,9 @@ def _provide_history_instance(session_id):
         history_instance = CustomMongoDBChatMessageHistory(
             new_message_callback=_call_new_message_callbacks,
             session_id=session_id,
-            connection_string=config.get("mongodb_connection_string"),
-            database_name=config.get("mongodb_chat_history_db_name"),
-            collection_name=config.get("mongodb_chat_history_collection_name"),
+            connection_string=model_config.get("mongodb_connection_string"),
+            database_name=model_config.get("mongodb_chat_history_db_name"),
+            collection_name=model_config.get("mongodb_chat_history_collection_name"),
         )
         _history_cache[session_id] = history_instance
     print(f"_provide_history_instance: Returning history instance for session_id: {session_id}")
@@ -124,9 +124,9 @@ class ChatArchive:
         """
         print("ChatArchive.get_archived_session_ids: Retrieving archived chat sessions")
         
-        connection_string = config.get("mongodb_connection_string")
-        database_name = config.get("mongodb_chat_history_db_name")
-        collection_name = config.get("mongodb_chat_history_collection_name")
+        connection_string = model_config.get("mongodb_connection_string")
+        database_name = model_config.get("mongodb_chat_history_db_name")
+        collection_name = model_config.get("mongodb_chat_history_collection_name")
 
         print(f"ChatArchive.get_archived_session_ids: Retrieving archived sessions from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
         start_time = time.time()
