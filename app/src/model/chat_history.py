@@ -178,20 +178,20 @@ def init_chat_archive() -> ChatArchive:
     return ChatArchive()
 
 class ChatVectorStore:
-    def __init__(self, embeddings=None):
-        print("ChatVectorStore: Initializing with embeddings:", embeddings.model if embeddings else "None")
-        self.embeddings = embeddings
+    def __init__(self, embeddings:Embeddings=None, persist_directory:str=None):
+        print(f"ChatVectorStore: embeddings: {embeddings}")
+        print(f"ChatVectorStore: persist_directory: {persist_directory}")
         print("ChatVectorStore: Creating Chroma vector store")
-        self.vector_store = Chroma(embedding_function=embeddings)
+        self._persist_directory = persist_directory
+        self.vector_store = Chroma(
+            embedding_function=embeddings,
+            persist_directory=persist_directory,)
 
     def add_message(self, message: BaseMessage) -> None:
         """
         Adds the message to the vector store.
         This method is called when a new message is added to the chat history.
         """
-        if self.embeddings is None:
-            print("ChatVectorStore.add_message: No embeddings provided, skipping vector store update")
-            return
         print(f"ChatVectorStore.add_message: Adding message to vector store: {message}")
         self.vector_store.add_texts([message.content])
 
@@ -205,6 +205,11 @@ class ChatVectorStore:
         print(f"ChatVectorStore.search_messages: Searching for '{query}'")
         results = self.vector_store.similarity_search(query, k=limit)
         return results
+    
+    @property
+    def persist_directory(self):
+        """Get the directory where the vector store is persisted."""
+        return self._persist_directory
 
 def init_chat_vector_store(embeddings: Embeddings) -> ChatVectorStore:
     """
@@ -212,5 +217,9 @@ def init_chat_vector_store(embeddings: Embeddings) -> ChatVectorStore:
     :param embeddings: The embeddings to use for the vector store.
     :return: An instance of ChatVectorStore.
     """
-    print("init_chat_vector_store: Creating ChatVectorStore instance with embeddings:", embeddings.model if embeddings else "None")
-    return ChatVectorStore(embeddings=embeddings)
+    print("init_chat_vector_store: Creating ChatVectorStore instance")
+    
+    persist_directory = model_config.get("chat_vector_store_dir")
+    print("init_chat_vector_store: persist_directory:", persist_directory)
+
+    return ChatVectorStore(embeddings=embeddings, persist_directory=persist_directory)

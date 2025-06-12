@@ -1,5 +1,6 @@
 {
     "mongodb_connection_string": "mongodb://ai-chatbot-mongodb:27017",
     "mongodb_chat_history_db_name": "chat",
-    "mongodb_chat_history_collection_name": "chat_history"
+    "mongodb_chat_history_collection_name": "chat_history",
+    "chat_vector_store_dir": "/persistence/chromadb"
 }
