@@ -1,5 +1,6 @@
 from model.llm import init_llm
 from model.llm import init_embeddings
+from langchain_core.messages import BaseMessage
 from model.chat_history import ChatHistorySaver, ChatArchive, init_chat_history_saver, init_chat_archive, init_chat_vector_store, history_prompt
 import uuid
 
@@ -56,4 +57,18 @@ class Chatbot:
         """
         print("Chatbot.get_current_chat_messages: Chat messages requested for session:", self.chat_session_id)
         return self.chat_archive.get_chat_messages(self.chat_session_id)
+    
+    def refresh_vector_store(self):
+        """
+        Refreshes the chat vector store by re-indexing all messages.
+        """
+        print("Chatbot.refresh_vector_store: Re-indexing chat vector store")
+        self.chat_vector_store.refresh(self.chat_archive, self.embeddings)
+    
+    def search_in_vector_store(self, query, limit=None) -> list[BaseMessage]:
+        """
+        Searches the chat vector store for the given query.
+        """
+        print(f"Chatbot.search_in_vector_store: Searching for '{query}' in vector store")
+        return self.chat_vector_store.search_messages(query, limit=limit)
 

@@ -195,6 +195,21 @@ class ChatVectorStore:
         print(f"ChatVectorStore.add_message: Adding message to vector store: {message}")
         self.vector_store.add_texts([message.content])
 
+    def add_messages(self, messages: list[BaseMessage]) -> None:
+        """
+        Adds a list of messages to the vector store.
+        :param messages: A list of BaseMessage objects to be added to the vector store.
+        """
+        if self.embeddings is None:
+            print("ChatVectorStore.add_messages: No embeddings provided, skipping vector store update")
+            return
+        print(f"ChatVectorStore.add_messages: Adding {len(messages)} messages to vector store")
+        texts = [msg.content for msg in messages]
+        # TODO: This is a good place to associate metadata with each message, such as timestamp - https://github.com/piotrmarcinkowski/ai-chatbot/issues/1
+        # Change the call to use vector_store.add_documents() - documents support metadata
+        # document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+        self.vector_store.add_texts(texts)
+
     def search_messages(self, query: str, limit: int = 20) -> list[BaseMessage]:
         """
         Searches for messages in the vector store that are similar to the query.
@@ -210,6 +225,25 @@ class ChatVectorStore:
     def persist_directory(self):
         """Get the directory where the vector store is persisted."""
         return self._persist_directory
+    
+    def refresh(self, chat_archive: ChatArchive, embeddings: Embeddings):
+        """
+        Refreshes the vector store by re-indexing all messages from the chat archive.
+        :param chat_archive: The chat archive to retrieve messages from.
+        :param embeddings: The embeddings to use for the vector store.
+        """
+        print("ChatVectorStore.refresh: Re-indexing all messages in the vector store")
+        self.embeddings = embeddings
+
+        print("ChatVectorStore.refresh: Removing the vector store collection")
+        self.vector_store.reset_collection()
+        
+        for session in chat_archive.get_archived_session_ids():
+            session_id = session["session_id"]
+            messages = chat_archive.get_chat_messages(session_id=session_id)
+            ids = [msg.id for msg in messages]
+            self.add_messages(messages)
+            print(f"ChatVectorStore.refresh: Added {len(messages)} messages from session {session_id}")
 
 def init_chat_vector_store(embeddings: Embeddings) -> ChatVectorStore:
     """
