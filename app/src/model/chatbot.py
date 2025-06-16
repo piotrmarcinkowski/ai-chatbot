@@ -62,8 +62,9 @@ class Chatbot:
         """
         Refreshes the chat vector store by re-indexing all messages.
         """
-        print("Chatbot.refresh_vector_store: Re-indexing chat vector store")
-        self.chat_vector_store.refresh(self.chat_archive, self.embeddings)
+        print("Chatbot.refresh_vector_store: Refreshing")
+        self.chat_vector_store.refresh(self.chat_archive)
+        print("Chatbot.refresh_vector_store: Refresh complete")
     
     def search_memory_for_context(self, query, top_k=5) -> list[BaseMessage]:
         """

@@ -170,8 +170,8 @@ class ChatArchive:
         """
         print(f"ChatArchive.get_chat_messages: Retrieving chat history for session_id: {session_id}")
         if session_id not in _history_cache:
-            print(f"ChatArchive.get_chat_messages: No chat history found for session_id: {session_id}")
-            return []
+            print(f"ChatArchive.get_chat_messages: No cached history found for session_id: {session_id}, creating new instance")
+            _provide_history_instance(session_id)
         return _history_cache[session_id].messages
     
 def init_chat_archive() -> ChatArchive:
@@ -200,9 +200,6 @@ class ChatVectorStore:
         Adds a list of messages to the vector store.
         :param messages: A list of BaseMessage objects to be added to the vector store.
         """
-        if self.embeddings is None:
-            print("ChatVectorStore.add_messages: No embeddings provided, skipping vector store update")
-            return
         print(f"ChatVectorStore.add_messages: Adding {len(messages)} messages to vector store")
         texts = [msg.content for msg in messages]
         # TODO: This is a good place to associate metadata with each message, such as timestamp - https://github.com/piotrmarcinkowski/ai-chatbot/issues/1
@@ -226,24 +223,35 @@ class ChatVectorStore:
         """Get the directory where the vector store is persisted."""
         return self._persist_directory
     
-    def refresh(self, chat_archive: ChatArchive, embeddings: Embeddings):
+    def refresh(self, chat_archive: ChatArchive):
         """
         Refreshes the vector store by re-indexing all messages from the chat archive.
         :param chat_archive: The chat archive to retrieve messages from.
         :param embeddings: The embeddings to use for the vector store.
         """
         print("ChatVectorStore.refresh: Re-indexing all messages in the vector store")
-        self.embeddings = embeddings
+        start_time = time.time()
+        chat_sessions = chat_archive.get_archived_session_ids()
+        print(f"Chats to re-index: {len(chat_sessions)}")
 
         print("ChatVectorStore.refresh: Removing the vector store collection")
         self.vector_store.reset_collection()
         
-        for session in chat_archive.get_archived_session_ids():
+        messages_count = 0
+        
+        for session in chat_sessions:
             session_id = session["session_id"]
             messages = chat_archive.get_chat_messages(session_id=session_id)
-            ids = [msg.id for msg in messages]
+            if not messages:
+                print(f"ChatVectorStore.refresh: No messages found for session {session_id}, skipping")
+                continue
+            messages_count += len(messages)
             self.add_messages(messages)
             print(f"ChatVectorStore.refresh: Added {len(messages)} messages from session {session_id}")
+
+        elapsed_time = time.time() - start_time
+        print(f"ChatVectorStore.refresh: Re-indexed {messages_count} messages in {elapsed_time:.4f} seconds")
+        return messages_count
 
 def init_chat_vector_store(embeddings: Embeddings) -> ChatVectorStore:
     """

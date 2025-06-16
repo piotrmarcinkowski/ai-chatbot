@@ -8,6 +8,8 @@ def draw_memory_ui():
     # Initialize the chatbot instance
     chatbot = chatbot_instance()
 
+    st.button("Refresh vector store (costs tokens)", on_click=chatbot.refresh_vector_store, type="secondary")
+
     # Input form for user messages
     with st.form(key="vector_search_form", clear_on_submit=True, enter_to_submit=True):
         user_input = st.text_area("Search for related topics in vector store:", value=None, height=100, max_chars=500)
