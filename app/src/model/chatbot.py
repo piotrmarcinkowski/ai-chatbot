@@ -65,10 +65,11 @@ class Chatbot:
         print("Chatbot.refresh_vector_store: Re-indexing chat vector store")
         self.chat_vector_store.refresh(self.chat_archive, self.embeddings)
     
-    def search_in_vector_store(self, query, limit=None) -> list[BaseMessage]:
+    def search_memory_for_context(self, query, top_k=5) -> list[BaseMessage]:
         """
-        Searches the chat vector store for the given query.
+        Searches the chat vector store for relevant context to the input query.
+        Returns the top_k most relevant messages.
         """
-        print(f"Chatbot.search_in_vector_store: Searching for '{query}' in vector store")
-        return self.chat_vector_store.search_messages(query, limit=limit)
+        print(f"Chatbot.search_memory_for_context: Searching memory for query: '{query}'")
+        return self.chat_vector_store.search_messages(query, limit=top_k)
 

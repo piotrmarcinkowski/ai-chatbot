@@ -2,3 +2,4 @@
 # .vscode mounted in dev container
 .vscode
 **/__pycache__/
+persistence/

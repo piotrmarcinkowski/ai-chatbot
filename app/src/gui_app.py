@@ -6,10 +6,10 @@ st.set_page_config(page_title="AI Chatbot", layout="wide")
 # Define the pages
 chat_page = st.Page("gui/page_chat.py", title="Chat", icon="💬")
 archive_page = st.Page("gui/page_archive.py", title="Chat Archive", icon="📜")
-diag_page = st.Page("gui/page_diag.py", title="Bot diagnostics", icon="🔍")
+memory_page = st.Page("gui/page_memory.py", title="Bot memory", icon="🔍")
 
 # Set up navigation
-pg = st.navigation([chat_page, archive_page, diag_page])
+pg = st.navigation([chat_page, archive_page, memory_page])
 
 # Run the selected page
 pg.run()
