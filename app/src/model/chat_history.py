@@ -48,7 +48,8 @@ class CustomMongoDBChatMessageHistory(MongoDBChatMessageHistory):
         """Append metadata to the message and store it in the database."""
         message.additional_kwargs = {
             "timestamp": int(time.time() * 1000),  # Store timestamp in milliseconds
-            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # ISO 8601 UTC format
+            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),  # ISO 8601 UTC format
+            "session_id": self.session_id,  # Store session ID for reference
         }
         self.new_message_callback(message)  # notify about the new message
         super().add_message(message)
@@ -193,7 +194,7 @@ class ChatVectorStore:
         This method is called when a new message is added to the chat history.
         """
         print(f"ChatVectorStore.add_message: Adding message to vector store: {message}")
-        self.vector_store.add_texts([message.content])
+        self.add_messages([message])
 
     def add_messages(self, messages: list[BaseMessage]) -> None:
         """
@@ -202,10 +203,8 @@ class ChatVectorStore:
         """
         print(f"ChatVectorStore.add_messages: Adding {len(messages)} messages to vector store")
         texts = [msg.content for msg in messages]
-        # TODO: This is a good place to associate metadata with each message, such as timestamp - https://github.com/piotrmarcinkowski/ai-chatbot/issues/1
-        # Change the call to use vector_store.add_documents() - documents support metadata
-        # document_1 = Document(page_content="foo", metadata={"baz": "bar"})
-        self.vector_store.add_texts(texts)
+        metadatas = [msg.additional_kwargs for msg in messages]
+        self.vector_store.add_texts(texts=texts, metadatas=metadatas)
 
     def search_messages(self, query: str, limit: int = 20) -> list[BaseMessage]:
         """
