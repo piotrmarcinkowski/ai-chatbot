@@ -20,7 +20,9 @@
                 "ms-python.pylint",
                 "hediet.vscode-drawio",
                 "GitHub.vscode-pull-request-github",
-                "mongodb.mongodb-vscode"
+                "mongodb.mongodb-vscode",
+                "Gruntfuggly.todo-tree",
+                "wayou.vscode-todo-highlight"
             ]
         }
     }
