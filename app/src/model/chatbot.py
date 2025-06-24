@@ -1,8 +1,12 @@
+import uuid
+from langchain_core.messages import BaseMessage
+from langgraph.prebuilt import create_react_agent
+from langgraph.graph import StateGraph, MessagesState, START
 from model.llm import init_llm
 from model.llm import init_embeddings
-from langchain_core.messages import BaseMessage
+from model.tools import init_tools
 from model.chat_history import ChatHistorySaver, ChatArchive, init_chat_history_saver, init_chat_archive, init_chat_vector_store, history_prompt
-import uuid
+from model.prompts import system_prompt
 
 class Chatbot:
     """
@@ -19,20 +23,43 @@ class Chatbot:
         print("Chatbot: Initializing embeddings")
         self.embeddings = init_embeddings()
 
-        print("Chatbot: Creating pipeline")
-        self.pipeline = history_prompt | self.llm
+        
+        
+        
 
-        print("Chatbot: Initializing chat history")
-        self.chat_history_saver : ChatHistorySaver = init_chat_history_saver()
-        self.pipeline = self.chat_history_saver.manage_chat_history(self.pipeline)
-
+        # TODO: ChatArchive rework according to https://langchain-ai.github.io/langgraph/concepts/persistence/#get-state-history
+        print("Chatbot: Initializing chat archive")
         self.chat_archive : ChatArchive = init_chat_archive()
+        checkpointer = self.chat_archive.get_checkpointer()
 
+        print("Chatbot: Initializing tools")
+        tools = init_tools(self)
+
+        print("Chatbot: Creating agent")
+        # TODO: Change to use a persistent checkpointer https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/langgraph/
+        self.agent = create_react_agent(
+            model=self.llm,
+            tools=tools,
+            checkpointer=checkpointer,
+            prompt=system_prompt)
+        
+        print("Chatbot: Initializing chat history")
+        # TODO: Rework to use checkpointer
+
+        #self.chat_history_saver : ChatHistorySaver = init_chat_history_saver()
+        # TODO: Sort out the chat history saver and vector store
+        #self.pipeline = self.chat_history_saver.manage_chat_history(self.pipeline)
+
+
+
+        # TODO: Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         self.chat_vector_store = init_chat_vector_store(self.embeddings)
+                
         # Link the chat history saver to the chat vector store so that
         # every new messages added to the chat gets immediately added
         # to the vector store
-        self.chat_history_saver.add_new_message_callback(self.chat_vector_store.add_message)
+        # TODO: Check if this is still needed
+        #self.chat_history_saver.add_new_message_callback(self.chat_vector_store.add_message)
 
         print("Chatbot: Initilization complete")
 
@@ -40,16 +67,25 @@ class Chatbot:
         """
         Starts a new chat session by generating a new session ID and clearing current chat history.
         """
-        self.chat_session_id = str(uuid.uuid4())
+        # self.chat_session_id = str(uuid.uuid4())
+        self.chat_session_id = "e35f74c0-662e-4363-809c-d72aa0714a45"
         print("Chatbot.start_new_chat: Starting new chat session with ID:", self.chat_session_id)
 
     def process_user_input(self, user_input):
         """
         Generates a response to the user input.
         """
-        config = {"configurable": {"session_id": self.chat_session_id}}
+        config = {"configurable": {
+            "thread_id": self.chat_session_id,
+            "assistant_name": "Jarvis",
+            }}
         print("Chatbot.process_user_input: Processing user input for session:", self.chat_session_id)
-        return self.pipeline.invoke({"user_input": user_input}, config=config)
+        #return self.pipeline.invoke({"user_input": user_input}, config=config)
+        # TODO: once the history is sorted out, check if config is still needed
+        return self.agent.invoke(
+            {"messages": [{"role": "user", "content": user_input}]},
+            config=config
+        )
     
     def get_current_chat_messages(self):
         """

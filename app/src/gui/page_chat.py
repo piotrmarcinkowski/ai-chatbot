@@ -29,8 +29,9 @@ def draw_chat_ui():
             st.write(f"**You:** {user_input}")
             response = chatbot.process_user_input(user_input)
 
-            print(f"< AI: {response.content}")
+            response_content = response['messages'][-1].content if response['messages'] else "No response generated."
+            print(f"< AI: {response_content}")
             print(f"< AI response details: {response}")
-            st.write(f"**AI:** {response.content}")
+            st.write(f"**AI:** {response_content}")
 
 draw_chat_ui()

@@ -6,8 +6,10 @@ from pymongo import MongoClient
 import time
 from langchain_core.messages import BaseMessage
 from langchain_chroma import Chroma
-from langchain_core.embeddings import Embeddings  # Add this import
-from langchain_core.chat_history import BaseChatMessageHistory  # Add this import
+from langchain_core.embeddings import Embeddings
+from langchain_core.chat_history import BaseChatMessageHistory
+from langgraph.checkpoint.memory import BaseCheckpointSaver
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 # TODO: Make this a structured prompt with bool result indicating if LLM knew the answer
 history_prompt = ChatPromptTemplate.from_messages(
@@ -117,6 +119,24 @@ class ChatArchive:
     """
     Manages the chat archive, allowing retrieval of archived chat sessions.
     """
+    def __init__(self):
+        """
+        Initializes the chat archive.
+        """
+        print("ChatArchive: Initializing chat archive")
+        connection_string = model_config.get("mongodb_connection_string")
+        database_name = model_config.get("mongodb_chat_history_db_name")
+        collection_name = model_config.get("mongodb_chat_history_collection_name")
+        print(f"ChatArchive: Using MongoDB connection string: {connection_string}, database: {database_name}, collection: {collection_name}")
+
+        client = MongoClient(connection_string)
+        self._checkpointer = MongoDBSaver(
+            client = client,
+            db_name = database_name,
+            checkpoint_collection_name = collection_name,
+            writes_collection_name = collection_name + "_writes",
+        )
+
     def get_archived_session_ids(self, limit=None):
         """
         Retrieves a list of archived chat sessions.
@@ -170,10 +190,42 @@ class ChatArchive:
         :return: A list of chat messages for the given session ID.
         """
         print(f"ChatArchive.get_chat_messages: Retrieving chat history for session_id: {session_id}")
-        if session_id not in _history_cache:
-            print(f"ChatArchive.get_chat_messages: No cached history found for session_id: {session_id}, creating new instance")
-            _provide_history_instance(session_id)
-        return _history_cache[session_id].messages
+        config={"configurable": {"thread_id": session_id}}
+        last_checkpoint = next(self._checkpointer.list(
+            config=config,
+            limit=1,  # We only need the latest checkpoint which contains contains the entire conversation history so far.
+        ))
+        print(f"ChatArchive.get_chat_messages: Last checkpoint for session_id {session_id}: {last_checkpoint}")
+        if (last_checkpoint is None):
+            print(f"ChatArchive.get_chat_messages: No messages found for session_id: {session_id}")
+            return []
+        messages_list = last_checkpoint.checkpoint['channel_values']['messages']
+        return messages_list
+
+        # If you only want the first element, you can simply access it directly (already done above):
+        # checkpoint = checkpoints[0]
+        # return checkpoint.channel_values.messages
+        # No need to iterate through the rest.
+        # messages = []
+        # for checkpoint in checkpoints:
+        #     print(f"ChatArchive.get_chat_messages: Processing checkpoint: {checkpoint}")
+        #     if "messages" in checkpoint:
+        #         for message in checkpoint["messages"]:
+        #             # Create a BaseMessage object from the checkpoint data
+        #             msg = BaseMessage(
+        #                 role=message["role"],
+        #                 content=message["content"],
+        #                 additional_kwargs=message.get("additional_kwargs", {})
+        #             )
+        #             messages.append(msg)
+        # return messages
+    
+    def get_checkpointer(self) -> BaseCheckpointSaver:
+        """
+        Returns a checkpointer for the chat archive.
+        This can be used to save and restore the state of the chat archive.
+        """
+        return self._checkpointer
     
 def init_chat_archive() -> ChatArchive:
     return ChatArchive()
