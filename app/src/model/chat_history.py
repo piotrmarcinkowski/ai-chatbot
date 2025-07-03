@@ -1,5 +1,3 @@
-from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from config.model_config import model_config
 from pymongo import MongoClient
@@ -7,7 +5,6 @@ import time
 from langchain_core.messages import BaseMessage
 from langchain_chroma import Chroma
 from langchain_core.embeddings import Embeddings
-from langchain_core.chat_history import BaseChatMessageHistory
 from langgraph.checkpoint.memory import BaseCheckpointSaver
 from langgraph.checkpoint.mongodb import MongoDBSaver
 
@@ -19,101 +16,6 @@ history_prompt = ChatPromptTemplate.from_messages(
         ("human", "{user_input}"),
     ]
 )
-
-_new_message_callbacks = []
-_history_cache : dict[str, BaseChatMessageHistory] = {}
-
-
-
-def _call_new_message_callbacks(message):
-    """
-    Calls all registered new message callbacks with the given message.
-    :param message: The message to be passed to the callbacks.
-    """
-    print("_call_new_message_callbacks: Calling new message callbacks for message:", message)
-    for callback in _new_message_callbacks:
-        print(f"_call_new_message_callbacks: Calling callback {callback} with message {message}")
-        callback(message)
-
-class CustomMongoDBChatMessageHistory(MongoDBChatMessageHistory):
-    """
-    MongoDBChatMessageHistory with customized message handling function what allows 
-    intercepting messages that are being passed to storage. 
-    Just before the message is stored, it can be modified or logged.
-    """
-    def __init__(self, new_message_callback, session_id, *args, **kwargs):
-        print(f"CustomMongoDBChatMessageHistory: Initializing with session_id: {session_id}")
-        super().__init__(session_id=session_id, *args, **kwargs)
-        self.new_message_callback = new_message_callback
-
-    def add_message(self, message: BaseMessage) -> None:
-        """Append metadata to the message and store it in the database."""
-        message.additional_kwargs = {
-            "timestamp": int(time.time() * 1000),  # Store timestamp in milliseconds
-            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),  # ISO 8601 UTC format
-            "session_id": self.session_id,  # Store session ID for reference
-        }
-        self.new_message_callback(message)  # notify about the new message
-        super().add_message(message)
-
-def _provide_history_instance(session_id):
-    """
-    Returns a MongoDBChatMessageHistory instance for the given session ID.
-    """
-    history_instance = _history_cache.get(session_id)
-    if history_instance is None:
-        print(f"_provide_history_instance: Creating MongoDBChatMessageHistory instance for session_id: {session_id}")
-        history_instance = CustomMongoDBChatMessageHistory(
-            new_message_callback=_call_new_message_callbacks,
-            session_id=session_id,
-            connection_string=model_config.get("mongodb_connection_string"),
-            database_name=model_config.get("mongodb_chat_history_db_name"),
-            collection_name=model_config.get("mongodb_chat_history_collection_name"),
-        )
-        _history_cache[session_id] = history_instance
-    print(f"_provide_history_instance: Returning history instance for session_id: {session_id}")
-    return history_instance
-
-class ChatHistorySaver:
-    """
-    Saves chat history for the provided pipeline.
-    """
-
-    def __init__(self):
-        """
-        Initializes the memory subsystem with the given LLM.
-        """
-        self.new_message_callbacks = []
-
-    def manage_chat_history(self, pipeline) -> RunnableWithMessageHistory:
-        """
-        Enables chat history management for the given pipeline. 
-        :param pipeline: The original pipeline to be wrapped.
-        :return: A new pipeline that wraps the original pipeline and manages chat history.
-        """
-        print("ChatHistory.manage_chat_history: creating RunnableWithMessageHistory")
-        return RunnableWithMessageHistory(
-            pipeline,
-            _provide_history_instance,
-            input_messages_key="user_input",
-            history_messages_key="chat_history",
-        )
-    
-    def add_new_message_callback(self, callback):
-        """
-        Adds a new message callback to be called when a new message is added.
-        :param callback: A function that takes a BaseMessage as an argument.
-        """
-        print("ChatHistorySaver.add_new_message_callback: Adding new message callback: ", callback)
-        _new_message_callbacks.append(callback)
-
-def init_chat_history_saver() -> ChatHistorySaver:
-    """
-    Initializes the chat history subsystem.
-    This function should be called once at the start of the application.
-    """
-    print("init_chat_history_saver: Creating ChatHistorySaver instance")
-    return ChatHistorySaver()
 
 class ChatArchive:
     """
@@ -155,21 +57,20 @@ class ChatArchive:
         db = client[database_name]
         collection = db[collection_name]
 
-        # Retrieve all unique SessionId values
-        # Aggregate to get the first message for each unique SessionId
+        # Retrieve all unique thread_id values
         pipeline = [
             {"$sort": {"_id": 1}},  # Ensure earliest message comes first
             {
-            "$group": {
-                "_id": "$SessionId",
-                "first_message": {"$first": "$History"},
-            }
+                "$group": {
+                    "_id": "$thread_id",
+                }
             },
             {"$sort": {"_id": -1}},  # Most recent sessions first by SessionId (UUIDs are sortable)
         ]
         results = list(collection.aggregate(pipeline))
         session_infos = [
-            {"session_id": doc["_id"], "first_message": doc["first_message"]}
+            # TODO : First message is not supported for now, we can add it later
+            {"session_id": doc["_id"], "first_message": doc["first_message"] if "first_message" in doc else None}
             for doc in results
         ]
         chat_sessions = session_infos
@@ -191,35 +92,16 @@ class ChatArchive:
         """
         print(f"ChatArchive.get_chat_messages: Retrieving chat history for session_id: {session_id}")
         config={"configurable": {"thread_id": session_id}}
-        last_checkpoint = next(self._checkpointer.list(
+        last_checkpoint = self._checkpointer.get(
             config=config,
-            limit=1,  # We only need the latest checkpoint which contains contains the entire conversation history so far.
-        ))
+        )
         print(f"ChatArchive.get_chat_messages: Last checkpoint for session_id {session_id}: {last_checkpoint}")
         if (last_checkpoint is None):
             print(f"ChatArchive.get_chat_messages: No messages found for session_id: {session_id}")
             return []
-        messages_list = last_checkpoint.checkpoint['channel_values']['messages']
+        messages_list = last_checkpoint['channel_values']['messages']
         return messages_list
 
-        # If you only want the first element, you can simply access it directly (already done above):
-        # checkpoint = checkpoints[0]
-        # return checkpoint.channel_values.messages
-        # No need to iterate through the rest.
-        # messages = []
-        # for checkpoint in checkpoints:
-        #     print(f"ChatArchive.get_chat_messages: Processing checkpoint: {checkpoint}")
-        #     if "messages" in checkpoint:
-        #         for message in checkpoint["messages"]:
-        #             # Create a BaseMessage object from the checkpoint data
-        #             msg = BaseMessage(
-        #                 role=message["role"],
-        #                 content=message["content"],
-        #                 additional_kwargs=message.get("additional_kwargs", {})
-        #             )
-        #             messages.append(msg)
-        # return messages
-    
     def get_checkpointer(self) -> BaseCheckpointSaver:
         """
         Returns a checkpointer for the chat archive.

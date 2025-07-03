@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, MessagesState, START
 from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
-from model.chat_history import ChatHistorySaver, ChatArchive, init_chat_history_saver, init_chat_archive, init_chat_vector_store, history_prompt
+from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
 from model.prompts import system_prompt
 
 class Chatbot:
@@ -23,11 +23,6 @@ class Chatbot:
         print("Chatbot: Initializing embeddings")
         self.embeddings = init_embeddings()
 
-        
-        
-        
-
-        # TODO: ChatArchive rework according to https://langchain-ai.github.io/langgraph/concepts/persistence/#get-state-history
         print("Chatbot: Initializing chat archive")
         self.chat_archive : ChatArchive = init_chat_archive()
         checkpointer = self.chat_archive.get_checkpointer()
@@ -36,22 +31,12 @@ class Chatbot:
         tools = init_tools(self)
 
         print("Chatbot: Creating agent")
-        # TODO: Change to use a persistent checkpointer https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/langgraph/
         self.agent = create_react_agent(
             model=self.llm,
             tools=tools,
             checkpointer=checkpointer,
             prompt=system_prompt)
         
-        print("Chatbot: Initializing chat history")
-        # TODO: Rework to use checkpointer
-
-        #self.chat_history_saver : ChatHistorySaver = init_chat_history_saver()
-        # TODO: Sort out the chat history saver and vector store
-        #self.pipeline = self.chat_history_saver.manage_chat_history(self.pipeline)
-
-
-
         # TODO: Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         self.chat_vector_store = init_chat_vector_store(self.embeddings)
                 
@@ -67,8 +52,7 @@ class Chatbot:
         """
         Starts a new chat session by generating a new session ID and clearing current chat history.
         """
-        # self.chat_session_id = str(uuid.uuid4())
-        self.chat_session_id = "e35f74c0-662e-4363-809c-d72aa0714a45"
+        self.chat_session_id = str(uuid.uuid4())
         print("Chatbot.start_new_chat: Starting new chat session with ID:", self.chat_session_id)
 
     def process_user_input(self, user_input):
