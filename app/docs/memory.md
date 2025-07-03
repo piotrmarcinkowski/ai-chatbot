@@ -26,8 +26,8 @@ timestamp/date, session_id,
 - [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/)
 
 
-### MongoDB
-Initial implementation (tag:1.0.1) was done around [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/#usage) class to store chat message history in a Mongodb database.
+### MongoDB (LangChain MongoDBChatMessageHistory)
+Initial implementation (tags:1.x) was done around [MongoDBChatMessageHistory](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/#usage) class to store chat message history in a Mongodb database.
 
 Chat messages are stored as a separate documents in chat/chat_history collection in mongodb database.
 
@@ -73,7 +73,80 @@ In LangGraph:
 
 A [thread](https://langchain-ai.github.io/langgraph/concepts/persistence/#threads) represents a sequence of related runs grouped by the same thread_id.
 
-## Langraph persistence implementation how-to
+### Langraph persistence implementation how-to
 
 https://langchain-ai.github.io/langgraph/how-tos/persistence/
 https://langchain-ai.github.io/langgraph/agents/context/
+
+### MongoDB (LangGraph Checkpointer) 
+After migration to LangGraph (tags:2.x) the implementation of chat history was updated to use checkpointer [MongoDBSaver](https://python.langchain.com/docs/integrations/memory/mongodb_chat_message_history/#usage).
+
+Chat messages, similarily to LangChain's MongoDBChatMessageHistory, are stored as a separate documents. Note that some fields are of BSON type, eg. binary representation of ChatMessage.
+
+[BSON spec](https://bsonspec.org/spec.html), 
+
+Sample document looks like this:
+```json
+{
+  "_id": {
+    "$oid": "6859bef720a416c9b33c8d78"
+  },
+  "checkpoint_id": "1f050743-8fe8-6f9a-bfff-b479841ef6d9",
+  "checkpoint_ns": "",
+  "thread_id": "c0eecbcc-ac73-49f3-9da5-f05baea2f2b4",
+  "checkpoint": {
+    "$binary": {
+      "base64": "h6F2A6J0c9kgMjAyNS0wNi0yM1QyMDo1NDoxNS4xMTIwNTkrMDA6MDCiaWTZJDFmMDUwNzQzLThmZTgtNmY5YS1iZmZmLWI0Nzk4NDFlZjZkOa5jaGFubmVsX3ZhbHVlc4GpX19zdGFydF9fgahtZXNzYWdlc5GCpHJvbGWkdXNlcqdjb250ZW50skphayBtYXN6IG5hIGltacSZP7BjaGFubmVsX3ZlcnNpb25zgalfX3N0YXJ0X18BrXZlcnNpb25zX3NlZW6BqV9faW5wdXRfX4CtcGVuZGluZ19zZW5kc5A=",
+      "subType": "00"
+    }
+  },
+  "metadata": {
+    "source": {
+      "$binary": {
+        "base64": "ImlucHV0Ig==",
+        "subType": "00"
+      }
+    },
+    "writes": {
+      "__start__": {
+        "messages": {
+          "$binary": {
+            "base64": "W3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiSmFrIG1hc3ogbmEgaW1pxJk/In1d",
+            "subType": "00"
+          }
+        }
+      }
+    },
+    "step": {
+      "$binary": {
+        "base64": "LTE=",
+        "subType": "00"
+      }
+    },
+    "parents": {},
+    "thread_id": {
+      "$binary": {
+        "base64": "ImMwZWVjYmNjLWFjNzMtNDlmMy05ZGE1LWYwNWJhZWEyZjJiNCI=",
+        "subType": "00"
+      }
+    },
+    "assistant_name": {
+      "$binary": {
+        "base64": "IkphcnZpcyI=",
+        "subType": "00"
+      }
+    }
+  },
+  "parent_checkpoint_id": null,
+  "type": "msgpack"
+}
+```
+Database can be browsed with vscode mongodb extension that is available within devcontainer.
+
+### Implementation decisions
+
+In order to access stored chat messages some data has to be base64-decoded (ChatMessage instances are stored as binary objects). Binary storage mechanism used by MongoDBSaver can be found here:
+https://github.com/langchain-ai/langchain-mongodb/blob/libs/langchain-mongodb/v0.6.2/libs/langgraph-checkpoint-mongodb/langgraph/checkpoint/mongodb/aio.py#L309
+
+### Mongodb extension 'playgrounds'
+[MongoDb Playgrounds](./../test/mongo_playground/)
