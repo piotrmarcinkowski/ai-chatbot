@@ -19,7 +19,6 @@ use('chat_checkpoints_db');
 
 // Return thread_id list
 // Add first message from each chat thread
-// TODO: try using $convert to convert binary to string
 // https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/
 db.getCollection('chat_checkpoints').aggregate([
   {
@@ -36,7 +35,7 @@ db.getCollection('chat_checkpoints').aggregate([
   },
 ]).toArray().map(doc => ({
   ...doc,
-  firstMessage: doc.firstMessage 
+  firstMessage: doc.firstMessage
 }));
 
 // // Print all checkpoints in the collection.
