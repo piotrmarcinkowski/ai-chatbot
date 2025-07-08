@@ -37,13 +37,13 @@ class Chatbot:
             checkpointer=checkpointer,
             prompt=system_prompt)
         
-        # TODO: Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
+        # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         self.chat_vector_store = init_chat_vector_store(self.embeddings)
                 
         # Link the chat history saver to the chat vector store so that
         # every new messages added to the chat gets immediately added
         # to the vector store
-        # TODO: Check if this is still needed
+        # TODO: Rework this: add agent graph with the node that saves messages to the vector store
         #self.chat_history_saver.add_new_message_callback(self.chat_vector_store.add_message)
 
         print("Chatbot: Initilization complete")
