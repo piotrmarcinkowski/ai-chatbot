@@ -1,12 +1,11 @@
-import uuid
-from langchain_core.messages import BaseMessage
-from langgraph.prebuilt import create_react_agent
-from langgraph.graph import StateGraph, MessagesState, START
+from langchain_core.messages import HumanMessage, BaseMessage
 from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
 from model.prompts import system_prompt
+from model.graph import init_state_graph
+import uuid
 
 class Chatbot:
     """
@@ -17,8 +16,11 @@ class Chatbot:
         print("Chatbot: Creating Chatbot instance")
         self.chat_session_id = None
 
+        print("Chatbot: Initializing tools")
+        tools = init_tools(self)
+
         print("Chatbot: Initializing LLM model")
-        self.llm = init_llm()
+        self.llm = init_llm().bind_tools(tools)
 
         print("Chatbot: Initializing embeddings")
         self.embeddings = init_embeddings()
@@ -27,15 +29,8 @@ class Chatbot:
         self.chat_archive : ChatArchive = init_chat_archive()
         checkpointer = self.chat_archive.get_checkpointer()
 
-        print("Chatbot: Initializing tools")
-        tools = init_tools(self)
-
-        print("Chatbot: Creating agent")
-        self.agent = create_react_agent(
-            model=self.llm,
-            tools=tools,
-            checkpointer=checkpointer,
-            prompt=system_prompt)
+        print("Chatbot: Creating agent graph")
+        self.graph = init_state_graph(self.llm, tools)
         
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         self.chat_vector_store = init_chat_vector_store(self.embeddings)
@@ -64,13 +59,10 @@ class Chatbot:
             "assistant_name": "Jarvis",
             }}
         print("Chatbot.process_user_input: Processing user input for session:", self.chat_session_id)
-        #return self.pipeline.invoke({"user_input": user_input}, config=config)
-        # TODO: once the history is sorted out, check if config is still needed
-        return self.agent.invoke(
-            {"messages": [{"role": "user", "content": user_input}]},
-            config=config
-        )
-    
+        messages = [HumanMessage(content=user_input)]
+        result = self.graph.invoke({"messages": messages})
+        return result
+ 
     def get_current_chat_messages(self):
         """
         Retrieves the messages for the current chat session.
@@ -93,4 +85,5 @@ class Chatbot:
         """
         print(f"Chatbot.search_memory_for_context: Searching memory for query: '{query}'")
         return self.chat_vector_store.search_messages(query, limit=top_k)
-
+    
+    

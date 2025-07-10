@@ -25,7 +25,9 @@ def init_tools(chatbot):
     Initializes and returns a list of tools.
     """
     print("Initializing tools...")
+    global _chatbot
     _chatbot = chatbot
     tools = [current_date, search_context_in_chat_history]
+    
     print(f"Tools initialized: {tools}")
     return tools
