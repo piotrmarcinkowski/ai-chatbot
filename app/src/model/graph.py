@@ -61,7 +61,7 @@ def tool_exists(state: State):
     return len(result.tool_calls) > 0
 
 
-def init_state_graph(llm, tools):
+def init_state_graph(llm, tools, checkpointer=None) -> StateGraph:
     """
     Initializes the state graph for the chatbot.
     """
@@ -82,4 +82,4 @@ def init_state_graph(llm, tools):
     graph_builder.add_edge("tools", "llm")
 
     graph_builder.set_entry_point("llm")
-    return graph_builder.compile()
+    return graph_builder.compile(checkpointer=checkpointer)

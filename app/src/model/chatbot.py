@@ -30,7 +30,7 @@ class Chatbot:
         checkpointer = self.chat_archive.get_checkpointer()
 
         print("Chatbot: Creating agent graph")
-        self.graph = init_state_graph(self.llm, tools)
+        self.graph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
         
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         self.chat_vector_store = init_chat_vector_store(self.embeddings)
@@ -54,13 +54,10 @@ class Chatbot:
         """
         Generates a response to the user input.
         """
-        config = {"configurable": {
-            "thread_id": self.chat_session_id,
-            "assistant_name": "Jarvis",
-            }}
         print("Chatbot.process_user_input: Processing user input for session:", self.chat_session_id)
         messages = [HumanMessage(content=user_input)]
-        result = self.graph.invoke({"messages": messages})
+        config={"configurable": {"thread_id": self.chat_session_id}}
+        result = self.graph.invoke({"messages": messages}, config)
         return result
  
     def get_current_chat_messages(self):

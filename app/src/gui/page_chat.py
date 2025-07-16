@@ -14,8 +14,18 @@ def draw_chat_ui():
         for message in chatbot.get_current_chat_messages():
             if message.type == "human":
                 st.write(f"**You:** {message.content}")
+            elif message.type == "ai":
+                if hasattr(message, 'tool_calls') and message.tool_calls:
+                    st.write(f"**AI (tool calls):** {message.content}")
+                    for tool_call in message.tool_calls:
+                        st.write(f"  - Tool Call: {tool_call.function}")
+                else:
+                    st.write(f"**AI:** {message.content}")
+            elif message.type == "tool":
+                st.write(f"**Tool Call:** {message.name} - {message.content}")
             else:
-                st.write(f"**AI:** {message.content}")
+                st.write(f"**Unknown Message Type:** {message.type} - {message.content}")
+            
 
     # Input form for user messages
     with st.form(key="chat_form", clear_on_submit=True, enter_to_submit=True):
