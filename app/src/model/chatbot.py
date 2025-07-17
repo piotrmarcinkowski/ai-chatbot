@@ -43,12 +43,19 @@ class Chatbot:
 
         print("Chatbot: Initilization complete")
 
-    def start_new_chat(self):
+    def new_chat(self):
         """
         Starts a new chat session by generating a new session ID and clearing current chat history.
         """
         self.chat_session_id = str(uuid.uuid4())
         print("Chatbot.start_new_chat: Starting new chat session with ID:", self.chat_session_id)
+
+    def load_chat(self, session_id):
+        """
+        Loads an existing chat session by its session ID.
+        """
+        print(f"Chatbot.load_chat: Loading chat session with ID: {session_id}")
+        self.chat_session_id = session_id
 
     def process_user_input(self, user_input):
         """

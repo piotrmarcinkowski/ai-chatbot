@@ -65,7 +65,7 @@ class ChatArchive:
                     "_id": "$thread_id",
                 }
             },
-            {"$sort": {"_id": -1}},  # Most recent sessions first by SessionId (UUIDs are sortable)
+            {"$sort": {"_id": 1}},  # Most recent sessions first by SessionId (UUIDs are sortable)
         ]
         results = list(collection.aggregate(pipeline))
         session_infos = [
