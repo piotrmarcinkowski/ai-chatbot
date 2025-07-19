@@ -23,6 +23,11 @@ It seems that Codespace uses the following directory. Provide it when prompt wit
 .vscode directory gets mounted on top of the original code structure. 
 It's missing becuase of the same reason as described above for workspace directory.
 
+Copy the missing directory using the Codespace instance terminal.
+```
+cp -r /workspaces/ai-chatbot/.devcontainer/.vscode .
+```
+
 # System variables
 The following variables are defines in the environment within codespace instance.
 

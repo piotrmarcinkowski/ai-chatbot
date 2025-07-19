@@ -33,7 +33,7 @@ class Chatbot:
         self.graph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
         
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
-        self.chat_vector_store = init_chat_vector_store(self.embeddings)
+        # self.chat_vector_store = init_chat_vector_store(self.embeddings)
                 
         # Link the chat history saver to the chat vector store so that
         # every new messages added to the chat gets immediately added
