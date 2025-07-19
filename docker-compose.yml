@@ -18,4 +18,5 @@ services:
     #   retries: 3
     user: "${UID}:${GID}"
     env_file:
-      - .env
+      - path: .env
+        required: false
