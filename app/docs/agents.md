@@ -18,3 +18,8 @@ https://python.langchain.com/docs/how_to/agent_executor/
 ## LangGraph's react agent executor
 LangGraph's react agent executor manages a state that is defined by a list of messages. It will continue to process the list until there are no tool calls in the agent's output. To kick it off, we input a list of messages. The output will contain the entire state of the graph-- in this case, the conversation history.
 https://python.langchain.com/docs/how_to/migrate_agent/ 
+
+## Agent development with LangGraph
+LangGraph provides both low-level primitives and high-level prebuilt components for building agent-based applications. 
+- LangGraph Basics: https://langchain-ai.github.io/langgraph/concepts/why-langgraph/
+- Prebuilt, reusable components provided by LangGraph: https://langchain-ai.github.io/langgraph/agents/overview/

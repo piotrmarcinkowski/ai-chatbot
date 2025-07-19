@@ -22,7 +22,8 @@
                 "GitHub.vscode-pull-request-github",
                 "mongodb.mongodb-vscode",
                 "Gruntfuggly.todo-tree",
-                "wayou.vscode-todo-highlight"
+                "wayou.vscode-todo-highlight",
+                "ms-python.black-formatter"
             ]
         }
     }

@@ -7,6 +7,6 @@ def chatbot_instance():
     """
     if "chatbot" not in st.session_state:
         new_chatbot = Chatbot()
-        new_chatbot.start_new_chat()
+        new_chatbot.new_chat()
         st.session_state.chatbot = new_chatbot
     return st.session_state.chatbot
