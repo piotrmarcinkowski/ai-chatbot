@@ -61,7 +61,7 @@ def render_human_message(message, st):
     """
     Renders a human message in the chat UI.
     """
-    st.write(f"**You:** :green[{message.content}]")
+    st.write(f"🧑 **You:** :green[{message.content}]")
 
 def render_ai_message(message, st):
     """
