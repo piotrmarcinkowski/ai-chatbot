@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 @tool
 def current_utc_time():
     """
-    Returns the current date and time in UTC format.
+    Returns the current UTC time in the ISO 8601 format.
     """
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=timezone.utc).isoformat()
     return now
 
 @tool
