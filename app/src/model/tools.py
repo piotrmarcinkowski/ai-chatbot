@@ -1,16 +1,33 @@
 from langchain_core.tools import tool
 from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
-from datetime import datetime
 from pydantic import BaseModel, Field
+from datetime import datetime, timezone
 
 @tool
-def current_date():
+def current_utc_time():
     """
-    Returns the current date in ISO 8601 format.
+    Returns the current date and time in UTC format.
     """
-    # TODO: Don't use depracated datetime.utcnow() method
-    return datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
+    now = datetime.now(tz=timezone.utc)
+    return now
+
+@tool
+def current_local_time():
+    """
+    Returns the current local date and time. Use to get time in the current timezone.
+    """
+    # Get current local time (based on system timezone)
+    local_now = datetime.now().astimezone()
+    return local_now
+
+@tool
+def local_time_zone():
+    """
+    Returns the current local timezone.
+    """
+    local_tz = datetime.now().astimezone().tzinfo
+    return str(local_tz)
 
 @tool
 def search_context_in_chat_history(input_query: str):
@@ -58,7 +75,7 @@ def init_tools(chatbot):
     print("Initializing tools...")
     global _chatbot
     _chatbot = chatbot
-    tools = [current_date, 
+    tools = [current_utc_time, current_local_time, local_time_zone,
              search_context_in_chat_history,
              arxiv_search, wikipedia_search]
     
