@@ -79,7 +79,8 @@ class Chatbot:
         Refreshes the chat vector store by re-indexing all messages.
         """
         print("Chatbot.refresh_vector_store: Refreshing")
-        self.chat_vector_store.refresh(self.chat_archive)
+        #TODO: Restore vector store refresh logic after migration to LangGraph
+        #self.chat_vector_store.refresh(self.chat_archive)
         print("Chatbot.refresh_vector_store: Refresh complete")
     
     def search_memory_for_context(self, query, top_k=5) -> list[BaseMessage]:
@@ -88,6 +89,8 @@ class Chatbot:
         Returns the top_k most relevant messages.
         """
         print(f"Chatbot.search_memory_for_context: Searching memory for query: '{query}'")
-        return self.chat_vector_store.search_messages(query, limit=top_k)
+        return []
+        #TODO: Restore vector store search logic after migration to LangGraph
+        #return self.chat_vector_store.search_messages(query, limit=top_k)
     
     
