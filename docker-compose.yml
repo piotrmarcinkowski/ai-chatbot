@@ -20,3 +20,5 @@ services:
     env_file:
       - path: .env
         required: false
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
