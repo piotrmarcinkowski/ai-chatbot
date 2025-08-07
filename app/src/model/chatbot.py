@@ -1,10 +1,12 @@
-from langchain_core.messages import HumanMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, BaseMessage
+from langgraph.graph import StateGraph
 from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
 from model.prompts import system_prompt
 from model.graph import init_state_graph
+from model.utils import get_current_time
 import uuid
 
 class Chatbot:
@@ -30,7 +32,7 @@ class Chatbot:
         checkpointer = self.chat_archive.get_checkpointer()
 
         print("Chatbot: Creating agent graph")
-        self.graph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
+        self.graph : StateGraph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
         
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         # self.chat_vector_store = init_chat_vector_store(self.embeddings)
@@ -57,16 +59,44 @@ class Chatbot:
         print(f"Chatbot.load_chat: Loading chat session with ID: {session_id}")
         self.chat_session_id = session_id
 
-    def process_user_input(self, user_input):
+    def create_user_message(self, content: str) -> HumanMessage:
         """
-        Generates a response to the user input.
+        Creates a new human message for the current chat session.
         """
-        print("Chatbot.process_user_input: Processing user input for session:", self.chat_session_id)
-        messages = [HumanMessage(content=user_input)]
+        message = HumanMessage(content=content, additional_kwargs={"time": get_current_time()})
+        print(f"Chatbot.create_user_message: Created user message for session {self.chat_session_id}: {message}")
+        return message
+
+    def process_user_message(self, user_input: HumanMessage) -> list[BaseMessage]:
+        """
+        Returns the AI response to a human message. The response is a list of AIMessage and ToolMessage instances.
+        """
+        print(f"Chatbot.process_user_input: Processing user input for session {self.chat_session_id}: {user_input}")
         config={"configurable": {"thread_id": self.chat_session_id}}
-        result = self.graph.invoke({"messages": messages}, config)
-        return result
- 
+        response = self.graph.invoke({"messages": [user_input]}, config)
+
+        # Get the last AI messages from the response (tool calls are also included)
+        last_ai_messages = []
+        for message in reversed(response['messages']):
+            if message.type == "ai" or message.type == "tool":
+                print(f"< AI: {message.content}")
+                #print(f"< AI response details: {message}")
+                last_ai_messages.insert(0, message)
+            else:
+                break
+
+        return last_ai_messages
+    
+    def process_user_message_stream(self, user_input: HumanMessage):
+        """
+        Processes user input and returns a generator that yields AI responses.
+        This is useful for streaming responses in the UI.
+        """
+        print(f"Chatbot.process_user_message_stream: Processing user input for session {self.chat_session_id}: {user_input}")
+        config = {"configurable": {"thread_id": self.chat_session_id}}
+        stream = self.graph.stream({"messages": [user_input]}, config, stream_mode= "values")
+        return stream
+
     def get_current_chat_messages(self):
         """
         Retrieves the messages for the current chat session.

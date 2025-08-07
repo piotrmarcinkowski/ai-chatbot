@@ -96,10 +96,19 @@ class ChatArchive:
             config=config,
         )
         print(f"ChatArchive.get_chat_messages: Last checkpoint for session_id {session_id}: {last_checkpoint}")
-        if (last_checkpoint is None):
-            print(f"ChatArchive.get_chat_messages: No messages found for session_id: {session_id}")
+        if last_checkpoint is None:
+            print(f"ChatArchive.get_chat_messages: No checkpoint found for session_id: {session_id}")
             return []
-        messages_list = last_checkpoint['channel_values']['messages']
+        if not 'channel_values' in last_checkpoint:
+            print(f"ChatArchive.get_chat_messages: No channel_values found in last checkpoint for session_id {session_id}")
+            return []
+        channel_values = last_checkpoint['channel_values']
+        if not 'messages' in channel_values:
+            print(f"ChatArchive.get_chat_messages: No messages found in channel_values for session_id {session_id}")
+            return []
+        
+        messages_list = channel_values['messages']
+        print(f"ChatArchive.get_chat_messages: Found {len(messages_list)} messages for session_id {session_id}")
         return messages_list
 
     def get_checkpointer(self) -> BaseCheckpointSaver:
