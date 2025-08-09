@@ -15,5 +15,7 @@ def create_initial_system_message() -> SystemMessage:
     If you are unsure about the answer, ask the user for clarification.
     If you need to use a tool, plan the tool calls first and then execute them.
     Keep your responses concise and relevant to the user's query. Generally provide short and to-the-point answers unless user asked for detailed answer.
+
+    As an answer to this message just greet the user, introduce yourself and say that you are ready to help. Then wait for user messages.
     """
     return SystemMessage(content=system_message)

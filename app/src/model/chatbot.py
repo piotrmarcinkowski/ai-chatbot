@@ -6,6 +6,7 @@ from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
 from model.graph import init_state_graph
 from model.utils import get_current_time, get_current_timestamp
+from model.prompts import create_initial_system_message
 import uuid
 
 class Chatbot:
@@ -32,7 +33,7 @@ class Chatbot:
 
         print("Chatbot: Creating agent graph")
         self.graph : StateGraph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
-        
+       
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         # self.chat_vector_store = init_chat_vector_store(self.embeddings)
                 
@@ -47,10 +48,23 @@ class Chatbot:
     def new_chat(self):
         """
         Starts a new chat session by generating a new session ID and clearing current chat history.
+        New chat session is initialized with a system prompt.
         """
         self.chat_session_id = str(uuid.uuid4())
         print("Chatbot.start_new_chat: Starting new chat session with ID:", self.chat_session_id)
 
+        # Initialize the system prompt for the new chat session
+        self._init_system_prompt()
+
+    def _init_system_prompt(self):
+        """
+        Initializes the system prompt for the chatbot.
+        This is used to set the context for the conversation.
+        """
+        print("Chatbot._init_system_prompt: Initializing system prompt")
+        response = self._process_message(create_initial_system_message())
+        print("Chatbot._init_system_prompt: System prompt initialized with response:", response)
+        
     def load_chat(self, session_id):
         """
         Loads an existing chat session by its session ID.
@@ -71,9 +85,13 @@ class Chatbot:
         """
         Returns the AI response to a human message. The response is a list of AIMessage and ToolMessage instances.
         """
-        print(f"Chatbot.process_user_input: Processing user input for session {self.chat_session_id}: {user_input}")
+        print(f"Chatbot.process_user_message: Processing user input for session {self.chat_session_id}: {user_input}")
+        return self._process_message(user_input)
+
+    def _process_message(self, message: BaseMessage) -> list[BaseMessage]:
+        print(f"Chatbot._process_message: Processing message for session {self.chat_session_id}: {message}")
         config={"configurable": {"thread_id": self.chat_session_id}}
-        response = self.graph.invoke({"messages": [user_input]}, config)
+        response = self.graph.invoke({"messages": [message]}, config)
 
         # Get the last AI messages from the response (tool calls are also included)
         last_ai_messages = []
@@ -86,7 +104,7 @@ class Chatbot:
                 break
 
         return last_ai_messages
-    
+
     def process_user_message_stream(self, user_input: HumanMessage):
         """
         Processes user input and returns a generator that yields AI responses.

@@ -88,10 +88,18 @@ class ChatArchive:
             for session_id in session_id_set
         ]
 
+        def get_first_human_message(session):
+            if not session["messages"]:
+                return None
+            for message in session["messages"]:
+                if message.type == "human":
+                    return message
+            return None
+        
         sessions_with_first_message = [
             {
                 "session_id": session["session_id"],
-                "first_message": session["messages"][0] if len(session["messages"]) > 0 else None,
+                "first_message": get_first_human_message(session),
             }
             for session in sessions
         ]
