@@ -39,19 +39,18 @@ class ChatArchive:
             writes_collection_name = collection_name + "_writes",
         )
 
-    def get_archived_session_ids(self, limit=None):
+    def get_session_id_set(self):
         """
-        Retrieves a list of archived chat sessions.
-        :param limit: Optional limit on the number of sessions to return. Most recent sessions are returned first.
-        :return: A list of IDs of the archived chat sessions.
+        Retrieves a set with archived chat sessions IDs.
+        :return: A set of IDs of the archived chat sessions.
         """
-        print("ChatArchive.get_archived_session_ids: Retrieving archived chat sessions")
+        print("ChatArchive.get_session_id_set: Retrieving archived chat sessions")
         
         connection_string = model_config.get("mongodb_connection_string")
         database_name = model_config.get("mongodb_chat_history_db_name")
         collection_name = model_config.get("mongodb_chat_history_collection_name")
 
-        print(f"ChatArchive.get_archived_session_ids: Retrieving archived sessions from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
+        print(f"ChatArchive.get_session_id_set: Retrieving archived sessions from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
         start_time = time.time()
         client = MongoClient(connection_string)
         db = client[database_name]
@@ -59,29 +58,59 @@ class ChatArchive:
 
         # Retrieve all unique thread_id values
         pipeline = [
-            {"$sort": {"_id": 1}},  # Ensure earliest message comes first
             {
                 "$group": {
                     "_id": "$thread_id",
                 }
             },
-            {"$sort": {"_id": 1}},  # Most recent sessions first by SessionId (UUIDs are sortable)
         ]
-        results = list(collection.aggregate(pipeline))
-        session_infos = [
-            # TODO : First message is not supported for now, we can add it later
-            {"session_id": doc["_id"], "first_message": doc["first_message"] if "first_message" in doc else None}
-            for doc in results
-        ]
-        chat_sessions = session_infos
+        session_id_list = list(collection.aggregate(pipeline))
+        session_id_set = {session["_id"] for session in session_id_list}
+        
         elapsed_time = time.time() - start_time
-        print(f"ChatArchive.get_archived_session_ids: Database retrieval took {elapsed_time:.4f} seconds")
-        print(f"ChatArchive.get_archived_session_ids: Found {len(chat_sessions)} archived sessions")
+        print(f"ChatArchive.get_session_id_set: Found {len(session_id_set)} archived sessions in {elapsed_time:.4f} seconds")
+        return session_id_set
+    
+    def get_session_list(self):
+        """
+        Retrieves a list of archived chat sessions with their metadata.
+        Sessions are sorted by timestamp in descending order.
+        :return: A list of dictionaries containing session metadata, including session ID, first message, and timestamp.
+        """
+        start_time = time.time()
+        
+        session_id_set = self.get_session_id_set()
+        sessions = [
+            {
+                "session_id": session_id,
+                "messages": self.get_chat_messages(session_id),
+            }
+            for session_id in session_id_set
+        ]
 
-        if limit is not None:
-            chat_sessions = chat_sessions[:limit]
-        print(f"ChatArchive.get_archived_session_ids: Returning {len(chat_sessions)} archived sessions")
-        return chat_sessions
+        sessions_with_first_message = [
+            {
+                "session_id": session["session_id"],
+                "first_message": session["messages"][0] if len(session["messages"]) > 0 else None,
+            }
+            for session in sessions
+        ]
+        
+        sessions_with_metadata = [
+            {
+                "session_id": session["session_id"],
+                "first_message": session["first_message"].content if session["first_message"] else "",
+                "timestamp": session["first_message"].additional_kwargs.get("timestamp", 0) if session["first_message"] else 0,
+                "time": session["first_message"].additional_kwargs.get("time", "<Unknown time>") if session["first_message"] else "<Unknown time>",
+            }
+            for session in sessions_with_first_message
+        ]
+
+        sessions_with_metadata.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        elapsed_time = time.time() - start_time
+        print(f"ChatArchive.get_sessions: Sessions retrieval took {elapsed_time:.4f} seconds")
+        return sessions_with_metadata
    
     def get_chat_messages(self, session_id):
         """
@@ -173,7 +202,7 @@ class ChatVectorStore:
         """
         print("ChatVectorStore.refresh: Re-indexing all messages in the vector store")
         start_time = time.time()
-        chat_sessions = chat_archive.get_archived_session_ids()
+        chat_sessions = chat_archive.get_session_list()
         print(f"Chats to re-index: {len(chat_sessions)}")
 
         print("ChatVectorStore.refresh: Removing the vector store collection")

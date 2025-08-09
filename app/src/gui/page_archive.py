@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 from model.chat_history import init_chat_archive
 from gui.view_model import chatbot_instance
@@ -6,15 +7,16 @@ from gui.view_model import chatbot_instance
 def draw_archive_ui():
     st.markdown("# 📜 Chat Archive")
     chat_archive = init_chat_archive()
-    session_ids = chat_archive.get_archived_session_ids(limit=10)
-
-    for session in session_ids:
+    sessions = chat_archive.get_session_list()
+    for session in sessions:
         session_id = session['session_id']
-        messages = chat_archive.get_chat_messages(session_id)
-        first_message = messages[0].content if messages else "No messages found"
-
+        first_message = session['first_message'] if session['first_message'] else "<No messages>"
+        timestamp = session['timestamp']
+        formatted_date = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S") if timestamp else "<Unknown time>"
+                
         with st.expander(first_message, expanded=False):
             st.write(f"**Session ID:** {session_id}")
+            st.write(f"**Date:** {formatted_date}")
             
             if st.button(label="Load Session", key=session_id, type="secondary"):
                 print(f"ChatArchive.Loading session {session['session_id']}")

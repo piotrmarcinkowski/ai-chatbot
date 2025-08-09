@@ -6,7 +6,7 @@ from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
 from model.prompts import system_prompt
 from model.graph import init_state_graph
-from model.utils import get_current_time
+from model.utils import get_current_time, get_current_timestamp
 import uuid
 
 class Chatbot:
@@ -63,7 +63,8 @@ class Chatbot:
         """
         Creates a new human message for the current chat session.
         """
-        message = HumanMessage(content=content, additional_kwargs={"time": get_current_time()})
+        metadata = {"timestamp": get_current_timestamp(), "time": get_current_time()}
+        message = HumanMessage(content=content, additional_kwargs=metadata)
         print(f"Chatbot.create_user_message: Created user message for session {self.chat_session_id}: {message}")
         return message
 
