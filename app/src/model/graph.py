@@ -1,4 +1,5 @@
 from langgraph.graph import StateGraph, MessagesState, START, END
+from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import (
     AnyMessage,
     SystemMessage,
@@ -10,6 +11,7 @@ from langchain_core.messages import (
 from typing import Annotated, Optional
 from typing_extensions import TypedDict
 import operator
+from model.prompts import create_initial_system_message
 
 _llm = None
 _tools = None
@@ -60,7 +62,31 @@ def tool_exists(state: State):
     result = state['messages'][-1]
     return len(result.tool_calls) > 0
 
+def initial_system_prompt(state: State):
+    """
+    Generates the system prompt for the chatbot.
+    This is used to initialize the conversation context.
+    """
+    initial_system_message = create_initial_system_message()
+    last_system_message_in_history = None
+    # Find the last system message in the chat history
+    for message in reversed(state["messages"]):
+        if isinstance(message, SystemMessage):
+            # If a system message already exists
+            last_system_message_in_history = message
+            break
 
+    # If there is already a system message in the chat history, 
+    # add the current initial system message only if it is different
+    if last_system_message_in_history:
+        if last_system_message_in_history.content != initial_system_message.content:
+            return {"messages": [initial_system_message]}
+        else:
+            return {}
+    else:
+        # If there is no system message in the chat history, add the initial system message
+        return {"messages": [initial_system_message]}
+    
 def init_state_graph(llm, tools, checkpointer=None) -> StateGraph:
     """
     Initializes the state graph for the chatbot.
@@ -71,15 +97,19 @@ def init_state_graph(llm, tools, checkpointer=None) -> StateGraph:
     _tools_names = {t.name: t for t in tools}
 
     graph_builder=StateGraph(State)
+
+    graph_builder.add_node("system_prompt", initial_system_prompt)
     graph_builder.add_node("llm", run_llm)
     graph_builder.add_node("tools", execute_tools)
+
     graph_builder.add_conditional_edges(
     "llm",
      tool_exists,
     {True: "tools", False: END}
     )
 
+    graph_builder.add_edge(START, "system_prompt")
+    graph_builder.add_edge("system_prompt", "llm")
     graph_builder.add_edge("tools", "llm")
-
-    graph_builder.set_entry_point("llm")
+    
     return graph_builder.compile(checkpointer=checkpointer)

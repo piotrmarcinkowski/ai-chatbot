@@ -4,7 +4,6 @@ from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
-from model.prompts import system_prompt
 from model.graph import init_state_graph
 from model.utils import get_current_time, get_current_timestamp
 import uuid

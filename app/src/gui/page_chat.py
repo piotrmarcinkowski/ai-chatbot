@@ -65,12 +65,17 @@ def dispatch_message_render(message, st):
     """
     Dispatches the rendering of a message based on its type.
     """
+    if not hasattr(message, 'type'):
+        print(f"Warning: Message does not have a 'type' attribute. Message: {message}")
+        return
     if message.type == "human":
         render_human_message(message, st)
     elif message.type == "ai":
         render_ai_message(message, st)
     elif message.type == "tool":
         render_tool_message(message, st)
+    elif message.type == "system":
+        render_system_message(message, st)
     else:
         st.write(f":red[**Unknown Message Type:** {message.type} - {message.content}]")
 
@@ -96,9 +101,12 @@ def render_planned_tool_calls(tool_calls, st):
     Renders the planned tool calls in the chat UI.
     """
     for tool_call in tool_calls:
-        if hasattr(tool_call, 'content'):
-            with st.expander(label=f"Planned Tool Call: {tool_call.get('name', '_')}", expanded=False):
-                st.write(tool_call)
+        if tool_call.get('name', None) == 'google_web_search':
+            # Special handling for Google web search tool calls
+            with st.expander(label="Planned Tool Call: google_web_search", expanded=False):
+                st.write(f"Call_id: {tool_call.get('id', '')}")
+                st.write(f"Query: {tool_call.get('args', {}).get('query', '_')}")
+        
 
 def render_tool_message(message, st):
     """
@@ -106,8 +114,16 @@ def render_tool_message(message, st):
     """
     with st.expander(label=f"Tool Call: {message.name}", expanded=False):
         st.write(f"Tool name: {message.name}")
-        st.write(f"Tool call_id: {message.tool_call_id}")
+        st.write(f"Call_id: {message.tool_call_id}")
         st.write("Content:")
+        with st.container(border=True):
+            st.text(message.content)
+
+def render_system_message(message, st):
+    """
+    Renders a system message in the chat UI.
+    """
+    with st.expander(label=":violet[System message]", expanded=False):
         with st.container(border=True):
             st.text(message.content)
 
