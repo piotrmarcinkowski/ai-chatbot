@@ -3,6 +3,8 @@ from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
+from langchain_google_community import GoogleSearchAPIWrapper
+import os
 
 @tool
 def current_utc_time():
@@ -49,7 +51,8 @@ def arxiv_search(topic: str) -> str:
     arxiv_tool=ArxivQueryRun(api_wrapper=arxiv_api)
     print("Tool: arxiv_search - query: ", topic)
     result = arxiv_tool.invoke(topic)
-    print("Tool: arxiv_search - result: ", result)    
+    print("Tool: arxiv_search - result: ", result)
+    return result
 
 
 class WikipediaTopic(BaseModel):
@@ -65,6 +68,19 @@ def wikipedia_search(topic: str) -> str:
     print("Tool: get_wiki_data - result: ", result)
     return result
 
+@tool
+def google_web_search(query: str) -> str:
+    """
+    Searches the web using Google Custom Search Engine (CSE) and returns the top results.
+    """
+
+    google_search = GoogleSearchAPIWrapper(
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+        google_cse_id=os.getenv("GOOGLE_CSE_ID")
+    )
+    results = google_search.results(query=query, num_results=5)
+    print(f"Google search results for query '{query}': {results}")
+    return results
 
 _chatbot = None
 
@@ -77,7 +93,17 @@ def init_tools(chatbot):
     _chatbot = chatbot
     tools = [current_utc_time, current_local_time, local_time_zone,
              search_context_in_chat_history,
-             arxiv_search, wikipedia_search]
+             arxiv_search, wikipedia_search
+    ]
+
+    # Initialize Google search tool with API key and CSE ID
+    _google_api_key = os.getenv("GOOGLE_API_KEY")
+    _google_cse_id = os.getenv("GOOGLE_CSE_ID")
+    if _google_api_key and _google_cse_id:
+        print("Google API key and CSE ID found - activating Google search tool.")
+        tools.append(google_web_search)
+    else:
+        print("Google API key and CSE ID must be set in environment variables. Google search tool will not be available.")
     
     print(f"Tools initialized: {tools}")
     return tools
