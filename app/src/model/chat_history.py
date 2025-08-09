@@ -147,6 +147,15 @@ class ChatArchive:
         messages_list = channel_values['messages']
         print(f"ChatArchive.get_chat_messages: Found {len(messages_list)} messages for session_id {session_id}")
         return messages_list
+    
+    def delete_session(self, session_id):
+        """
+        Deletes the chat session with the given session ID.
+        :param session_id: The session ID of the chat session to delete.
+        """
+        print(f"ChatArchive.delete_session: Deleting session with ID: {session_id}")
+        self._checkpointer.delete_thread(session_id)
+        print(f"ChatArchive.delete_session: Session {session_id} deleted successfully")
 
     def get_checkpointer(self) -> BaseCheckpointSaver:
         """

@@ -18,10 +18,18 @@ def draw_archive_ui():
             st.write(f"**Session ID:** {session_id}")
             st.write(f"**Date:** {formatted_date}")
             
-            if st.button(label="Load Session", key=session_id, type="secondary"):
-                print(f"ChatArchive.Loading session {session['session_id']}")
-                chatbot = chatbot_instance()
-                chatbot.load_chat(session_id)
-                st.switch_page("gui/page_chat.py")
+            col1, col2, _ = st.columns([1, 1, 8])
+
+            with col1:
+                if st.button(label=":green[Load Session]", key=session_id, type="secondary"):
+                    print(f"ChatArchive.Loading session {session['session_id']}")
+                    chatbot = chatbot_instance()
+                    chatbot.load_chat(session_id)
+                    st.switch_page("gui/page_chat.py")
+            with col2:
+                if st.button(label=":red[Delete Session]", key=f"delete_{session_id}", type="secondary"):
+                    print(f"ChatArchive.Deleting session {session['session_id']}")
+                    chat_archive.delete_session(session_id)
+                    st.rerun()
 
 draw_archive_ui()
