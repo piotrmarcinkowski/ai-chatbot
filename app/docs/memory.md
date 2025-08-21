@@ -73,6 +73,10 @@ In LangGraph:
 
 A [thread](https://langchain-ai.github.io/langgraph/concepts/persistence/#threads) represents a sequence of related runs grouped by the same thread_id.
 
+# Short-term memory
+
+This section describes short-term memory implementations used in this project.
+
 ### Langraph persistence implementation how-to
 
 https://langchain-ai.github.io/langgraph/how-tos/persistence/
@@ -150,3 +154,12 @@ https://github.com/langchain-ai/langchain-mongodb/blob/libs/langchain-mongodb/v0
 
 ### Mongodb extension 'playgrounds'
 [MongoDb Playgrounds](./../test/mongo_playground/)
+
+# Long-term memory
+
+This section describes short-term memory implementations used in this project.
+
+## Links
+
+- https://langchain-ai.github.io/langgraph/concepts/memory/#long-term-memory
+
