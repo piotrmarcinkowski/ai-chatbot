@@ -4,6 +4,7 @@ from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
 from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
+from model.memory import init_memory
 from model.graph import init_state_graph
 from model.utils import get_current_time, get_current_timestamp
 from model.prompts import create_initial_system_message
@@ -31,8 +32,12 @@ class Chatbot:
         self.chat_archive : ChatArchive = init_chat_archive()
         checkpointer = self.chat_archive.get_checkpointer()
 
+        print("Chatbot: Initializing long-term memory")
+        self.memory = init_memory()
+        store = self.memory.get_store()
+        
         print("Chatbot: Creating agent graph")
-        self.graph : StateGraph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer)
+        self.graph : StateGraph = init_state_graph(llm=self.llm, tools=tools, checkpointer=checkpointer, store=store)
        
         # TODO: [research]Rework vector store implementation to be compatible with builder.compile to pass it as store parameter
         # self.chat_vector_store = init_chat_vector_store(self.embeddings)
@@ -90,7 +95,7 @@ class Chatbot:
 
     def _process_message(self, message: BaseMessage) -> list[BaseMessage]:
         print(f"Chatbot._process_message: Processing message for session {self.chat_session_id}: {message}")
-        config={"configurable": {"thread_id": self.chat_session_id}}
+        config=self.create_config()
         response = self.graph.invoke({"messages": [message]}, config)
 
         # Get the last AI messages from the response (tool calls are also included)
@@ -111,7 +116,7 @@ class Chatbot:
         This is useful for streaming responses in the UI.
         """
         print(f"Chatbot.process_user_message_stream: Processing user input for session {self.chat_session_id}: {user_input}")
-        config = {"configurable": {"thread_id": self.chat_session_id}}
+        config = self.create_config()
         stream = self.graph.stream({"messages": [user_input]}, config, stream_mode= "values")
         return stream
 
@@ -141,4 +146,8 @@ class Chatbot:
         #TODO: Restore vector store search logic after migration to LangGraph
         #return self.chat_vector_store.search_messages(query, limit=top_k)
     
-    
+    def create_config(self):
+        """
+        Creates a configuration dictionary for the chatbot.
+        """
+        return {"configurable": {"thread_id": self.chat_session_id, "user_id": "test_user"}}

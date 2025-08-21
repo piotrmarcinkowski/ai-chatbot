@@ -8,6 +8,8 @@ from langchain_core.messages import (
     AIMessage,
     trim_messages,
 )
+from langchain_core.stores import BaseStore
+from langgraph.config import get_store
 from typing import Annotated, Optional
 from typing_extensions import TypedDict
 import operator
@@ -86,8 +88,7 @@ def initial_system_prompt(state: State):
     else:
         # If there is no system message in the chat history, add the initial system message
         return {"messages": [initial_system_message]}
-    
-def init_state_graph(llm, tools, checkpointer=None) -> StateGraph:
+def init_state_graph(llm, tools, checkpointer=None, store=None) -> StateGraph:
     """
     Initializes the state graph for the chatbot.
     """
@@ -112,4 +113,4 @@ def init_state_graph(llm, tools, checkpointer=None) -> StateGraph:
     graph_builder.add_edge("system_prompt", "llm")
     graph_builder.add_edge("tools", "llm")
     
-    return graph_builder.compile(checkpointer=checkpointer)
+    return graph_builder.compile(checkpointer=checkpointer, store=store)
