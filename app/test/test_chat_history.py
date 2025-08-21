@@ -27,18 +27,18 @@ def test_vector_store_search():
     assert results[0].page_content == messages[3].content
 
 
-@patch("model.chat_history.model_config")
-def test_vector_store_configuration(mock_model_config, tmpdir):
+@patch("model.chat_history.config_loader")
+def test_vector_store_configuration(mock_config_loader, tmpdir):
     """
     Test the initialization of the ChatVectorStore with a configured persist directory.
     """
     # Prepare temporary directory for testing
     expected_persist_directory = tmpdir.mkdir("test_persist_directory")
-    mock_model_config.get.return_value = str(expected_persist_directory)
+    mock_config_loader.get.return_value = str(expected_persist_directory)
 
     embeddings = DeterministicFakeEmbedding(size=100)
     vector_store = model.chat_history.init_chat_vector_store(embeddings)
 
-    mock_model_config.get.assert_called_once_with("chat_vector_store_dir")
+    mock_config_loader.get.assert_called_once_with("chat_vector_store_dir")
     assert vector_store.persist_directory == str(expected_persist_directory)
     assert len(tmpdir.listdir()) == 1
