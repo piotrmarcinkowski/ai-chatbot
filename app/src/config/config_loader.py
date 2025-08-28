@@ -24,5 +24,5 @@ class Config:
     def get(self, key, default=None):
         return self.config.get(key, default)
     
-model_config = Config('config.json')
+app_config = Config('config.json')
 assistant_config = Config('assistant.json')

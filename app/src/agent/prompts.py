@@ -1,5 +1,5 @@
 from langchain_core.messages import SystemMessage
-from config.model_config import assistant_config
+from config.config_loader import assistant_config
 
 def create_initial_system_message() -> SystemMessage:
     """

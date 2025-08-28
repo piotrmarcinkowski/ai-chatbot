@@ -15,6 +15,15 @@
       ],
       "justMyCode": false,
       "console": "internalConsole"
+    },
+    {
+      "name": "LangGraph Dev (agent_launcher.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/agent_launcher.py",
+      "python": "/usr/local/bin/python3",
+      "console": "internalConsole"
     }
+
   ]
 }

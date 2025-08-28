@@ -1,7 +1,7 @@
 import streamlit as st
-from datetime import datetime
+from utils.format import format_date
 
-from model.chat_history import init_chat_archive
+from app.src.model.chat_history import init_chat_archive
 from gui.view_model import chatbot_instance
 
 def draw_archive_ui():
@@ -12,7 +12,7 @@ def draw_archive_ui():
         session_id = session['session_id']
         first_message = session['first_message'] if session['first_message'] else "<No messages>"
         timestamp = session['timestamp']
-        formatted_date = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S") if timestamp else "<Unknown time>"
+        formatted_date = format_date(timestamp) if timestamp else "<Unknown time>"
                 
         with st.expander(first_message, expanded=False):
             st.write(f"**Session ID:** {session_id}")

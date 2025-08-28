@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from config.model_config import model_config
+from config.config_loader import app_config
 from pymongo import MongoClient
 import time
 from langchain_core.messages import BaseMessage
@@ -26,9 +26,9 @@ class ChatArchive:
         Initializes the chat archive.
         """
         print("ChatArchive: Initializing chat archive")
-        connection_string = model_config.get("mongodb_connection_string")
-        database_name = model_config.get("mongodb_chat_history_db_name")
-        collection_name = model_config.get("mongodb_chat_history_collection_name")
+        connection_string = app_config.get("mongodb_connection_string")
+        database_name = app_config.get("mongodb_chat_history_db_name")
+        collection_name = app_config.get("mongodb_chat_history_collection_name")
         print(f"ChatArchive: Using MongoDB connection string: {connection_string}, database: {database_name}, collection: {collection_name}")
 
         client = MongoClient(connection_string)
@@ -46,9 +46,9 @@ class ChatArchive:
         """
         print("ChatArchive.get_session_id_set: Retrieving archived chat sessions")
         
-        connection_string = model_config.get("mongodb_connection_string")
-        database_name = model_config.get("mongodb_chat_history_db_name")
-        collection_name = model_config.get("mongodb_chat_history_collection_name")
+        connection_string = app_config.get("mongodb_connection_string")
+        database_name = app_config.get("mongodb_chat_history_db_name")
+        collection_name = app_config.get("mongodb_chat_history_collection_name")
 
         print(f"ChatArchive.get_session_id_set: Retrieving archived sessions from MongoDB at {connection_string}, database: {database_name}, collection: {collection_name}")
         start_time = time.time()
@@ -249,7 +249,7 @@ def init_chat_vector_store(embeddings: Embeddings) -> ChatVectorStore:
     """
     print("init_chat_vector_store: Creating ChatVectorStore instance")
     
-    persist_directory = model_config.get("chat_vector_store_dir")
+    persist_directory = app_config.get("chat_vector_store_dir")
     print("init_chat_vector_store: persist_directory:", persist_directory)
 
     return ChatVectorStore(embeddings=embeddings, persist_directory=persist_directory)
