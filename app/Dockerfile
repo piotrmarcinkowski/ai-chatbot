@@ -37,7 +37,9 @@ ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--server.addre
 FROM ai-chatbot-base AS ai-chatbot-dev
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git
+    git vim
+
+ENV EDITOR=vim
 
 # In development image the source directory is not copied to the image - mount it from the host instead
 # while configuring the devcontainer
