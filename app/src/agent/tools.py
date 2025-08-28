@@ -1,37 +1,59 @@
 import os
 import logging
+from datetime import datetime, date
 from langchain_core.tools import tool
 from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
 from pydantic import BaseModel, Field
-from utils.time import get_current_local_time, get_current_time, get_local_time_zone
+from utils.time import current_local_time, current_utc_time, local_time_zone
 from langchain_google_community import GoogleSearchAPIWrapper
+from langchain_tavily import TavilySearch
 
 log = logging.getLogger(__name__)
 
+@tool("current_datetime", return_direct=True)
+def get_current_datetime() -> str:
+    """
+    Returns the current date and time in ISO format.
+    Useful when reasoning about upcoming events, schedules, or time-dependent calculations.
+    """
+    return current_local_time()
+
 @tool
-def current_utc_time():
+def get_current_utc_time():
     """
     Returns the current UTC time in the ISO 8601 format.
     """
-    now = get_current_time()
+    now = current_utc_time()
     return now
 
-@tool
-def current_local_time():
+@tool("date_difference", return_direct=True)
+def date_difference(target_date: str) -> str:
     """
-    Returns the current local date and time. Use to get time in the current timezone.
+    Calculates the number of days between today and a given target date.
+    Input must be in the format 'YYYY-MM-DD'.
+    Returns a human-readable difference (past or future).
     """
-    # Get current local time (based on system timezone)
-    local_now = get_current_local_time()
-    return local_now
+    try:
+        today = date.today()
+        target = datetime.strptime(target_date, "%Y-%m-%d").date()
+        delta = (target - today).days
 
-@tool
-def local_time_zone():
+        if delta > 0:
+            return f"There are {delta} days until {target}."
+        elif delta < 0:
+            return f"{abs(delta)} days have passed since {target}."
+        else:
+            return f"Today is {target}."
+    except Exception as e:
+        return f"Error: invalid date format. Please provide 'YYYY-MM-DD'. ({str(e)})"
+
+@tool("local_time_zone", return_direct=True)
+def get_local_time_zone():
     """
     Returns the current local timezone.
     """
-    local_tz = get_local_time_zone()
+    local_tz = local_time_zone()
     return str(local_tz)
 
 class ArxivTopic(BaseModel):
@@ -80,20 +102,37 @@ def init_tools():
     Initializes and returns a list of tools.
     """
     log.info("Initializing tools...")
-    _tools = [current_utc_time, current_local_time, local_time_zone,
+    _tools = [get_current_datetime, date_difference, get_current_utc_time, get_local_time_zone,
              arxiv_search, wikipedia_search
     ]
 
-    # Initialize Google search tool with API key and CSE ID
+    init_tavily_search_tool(_tools)
+    init_google_search_tool(_tools)
+    
+    log.info("Tools initialized: %s", _tools)
+    return _tools
+
+def init_tavily_search_tool(tools_list):
+    """
+    Initialize Tavily search tool with API key
+    """
+    _tavily_api_key = os.getenv("TAVILY_API_KEY")
+    if _tavily_api_key:
+        log.info("Tavily API key found - activating Tavily search tool.")
+        tools_list.append(TavilySearch(max_results=2, include_answer=True, include_raw_content=False, auto_parameters=True))
+    else:
+        log.warning("Tavily API key must be set in environment variables. Tavily search tool will not be available.")
+
+def init_google_search_tool(tools_list):
+    """
+    Initialize Google search tool with API key and CSE ID
+    """
     _google_api_key = os.getenv("GOOGLE_API_KEY")
     _google_cse_id = os.getenv("GOOGLE_CSE_ID")
     if _google_api_key and _google_cse_id:
         log.info("Google API key and CSE ID found - activating Google search tool.")
-        _tools.append(google_web_search)
+        tools_list.append(google_web_search)
     else:
         log.warning("Google API key and CSE ID must be set in environment variables. Google search tool will not be available.")
-    
-    log.info("Tools initialized: %s", _tools)
-    return _tools
 
 tools = init_tools()
