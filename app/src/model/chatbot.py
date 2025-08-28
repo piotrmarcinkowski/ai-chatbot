@@ -3,9 +3,9 @@ from langgraph.graph import StateGraph
 from model.llm import init_llm
 from model.llm import init_embeddings
 from model.tools import init_tools
-from model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
-from model.memory import init_memory
-from model.graph import init_state_graph
+from app.src.model.chat_history import ChatArchive, init_chat_archive, init_chat_vector_store
+from app.src.persistence.memory import init_memory
+from app.src.agent.graph import init_state_graph
 from model.utils import get_current_time, get_current_timestamp
 from model.prompts import create_initial_system_message
 import uuid
