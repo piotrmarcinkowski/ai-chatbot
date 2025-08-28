@@ -1,13 +1,16 @@
 from functools import lru_cache
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
-from langchain_core.messages import SystemMessage
 from agent.tools import tools
 from agent.state import AgentState
 from agent.prompts import create_initial_system_message
 
 @lru_cache(maxsize=4)
 def _get_model(model_name: str):
+    """
+    Returns a language model instance based on the provided model name.
+    Caches up to 4 different model instances.
+    """
     if model_name == "openai":
         model = ChatOpenAI(temperature=0, model_name="gpt-4o")
     elif model_name == "anthropic":
@@ -21,6 +24,9 @@ def _get_model(model_name: str):
 
 # Define the function that calls the model
 def call_model(state, config):
+    """
+    Calls the language model with the current state and configuration.
+    """
     messages = state["messages"]
     system_prompt = create_initial_system_message()
     messages = [system_prompt] + messages
@@ -35,10 +41,8 @@ tool_node = ToolNode(tools)
 
 def tool_call_exists(state: AgentState):
     """
-    Checks whether the agent's latest state contains tool calls.
-    This function is used to create a conditional edge, 
-    which decides whether to go to the execute_tools() function or 
-    the END node and returns the agent’s final response. 
+    Checks if there are still tools to be called.
+    This node is used to create a loop in the graph that continues until no more tool calls are needed.
     """
     result = state['messages'][-1]
     return len(result.tool_calls) > 0

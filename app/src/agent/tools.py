@@ -1,11 +1,11 @@
+import os
+import logging
 from langchain_core.tools import tool
 from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
 from pydantic import BaseModel, Field
 from utils.time import get_current_local_time, get_current_time, get_local_time_zone
 from langchain_google_community import GoogleSearchAPIWrapper
-import os
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def init_tools():
     else:
         log.warning("Google API key and CSE ID must be set in environment variables. Google search tool will not be available.")
     
-    log.info(f"Tools initialized: {_tools}")
+    log.info("Tools initialized: %s", _tools)
     return _tools
 
 tools = init_tools()
