@@ -16,3 +16,5 @@ langgraph-api~=0.4.1
 wikipedia~=1.4.0
 langchain-google-community~=2.0.7
 langchain-tavily~=0.2.11
+markdownify~=1.2.0
+beautifulsoup4~=4.13.5
