@@ -96,4 +96,5 @@ See the following commands in the command palette (Crtl+Shift+P):
 
 ## Issues
 
-All issues are stored in Github Issues. See more: [./docs/github-issues-extension.md](./docs/github-issues-extension.md)
+All issues are stored in Github Issues. See more: [./app/docs/github-issues-extension.md](./app/docs/github-issues-extension.md)
+
