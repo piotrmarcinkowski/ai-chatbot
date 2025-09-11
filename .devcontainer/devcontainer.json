@@ -9,8 +9,7 @@
     ],
     "remoteUser": "chatbot",
     "remoteEnv": {
-        // This removes the email prompt on streamlit startup
-        "STREAMLIT_SERVER_HEADLESS": "true"
+
     },
     "customizations": {
         "vscode": {

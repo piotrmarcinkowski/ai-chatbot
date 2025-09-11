@@ -1,7 +1,7 @@
 import requests
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import List
 from langchain_core.messages import AnyMessage, AIMessage, HumanMessage
 from markdownify import markdownify as md
 from bs4 import BeautifulSoup
@@ -54,7 +54,6 @@ def url_to_markdown(url: str) -> str:
         log.info(f"Fetched URL: {url} with status code {response.status_code}")
         html = response.text
 
-        # https://chatgpt.com/c/68c0a055-8b00-8323-baf8-c5b13f23ca60
         # Strip out scripts and styles using BeautifulSoup
         soup = BeautifulSoup(html, "html.parser")
         for tag in soup(["script", "style"]):

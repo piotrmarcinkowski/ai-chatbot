@@ -2,21 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run ai-chatbot as Streamlit App",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "streamlit",
-      "cwd": "${workspaceFolder}/app/src",
-      "args": [
-        "run",
-        "gui_app.py",
-        "--server.port=8501",
-        "--server.address=0.0.0.0"
-      ],
-      "justMyCode": false,
-      "console": "internalConsole"
-    },
-    {
       "name": "LangGraph Dev (agent_launcher.py)",
       "type": "debugpy",
       "request": "launch",

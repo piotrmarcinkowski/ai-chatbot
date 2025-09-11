@@ -3,6 +3,5 @@
     "mongodb_chat_history_db_name": "chat_checkpoints_db",
     "mongodb_chat_history_collection_name": "chat_checkpoints",
     "mongodb_longterm_memory_db_name": "long_term_memory_db",
-    "mongodb_longterm_memory_collection_name": "long_term_memory",
-    "chat_vector_store_dir": "/ai-chatbot/persistence/chromadb"
+    "mongodb_longterm_memory_collection_name": "long_term_memory"
 }

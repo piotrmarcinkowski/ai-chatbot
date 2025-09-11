@@ -33,7 +33,6 @@ HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 USER ${USER}
 
 #ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
-
 #TODO: Launch langgraph server here - move UI code (Streamlit) to other container - needs fixing first (FastAPI addition)
 
 # Development image (used in devcontainer)
