@@ -16,16 +16,6 @@ docker compose up
 
 Note: For development, use Dev Container setup described in the next section.
 
-~~
-Once the app is started look for the following URL in the output and open the link in a web browser.
-
-```
-You can now view your Streamlit app in your browser.
-ai-chatbot-1        |
-ai-chatbot-1        |   URL: http://0.0.0.0:8501
-```
-~~
-
 # Dev container (vscode)
 
 This project supports development in a container using vscode's Dev Container plugin.
