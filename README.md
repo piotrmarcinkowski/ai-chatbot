@@ -5,8 +5,11 @@ General purpose AI chatbot.
 Create `.env` file in the project's root folder basing on the attached [env.example](env.example) file.
 
 # Run
-#TODO: Rework this - docker compose needs to be changed to launch langgraph server - streamlit needs fixing first (FastAPI addition - https://langchain-ai.github.io/langgraph/tutorials/langgraph-platform/local-server/#7-test-the-api)
-The following command spins up all required containers in production mode.
+
+| :zap:  Out of order - docker compose environment needs fixing [issue](https://github.com/piotrmarcinkowski/ai-chatbot/issues/20)
+|------------------------------------------|
+
+The following command spins up all required containers in production mode. 
 ```
 docker compose up
 ```
