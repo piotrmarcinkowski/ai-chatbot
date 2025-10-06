@@ -43,6 +43,13 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     Returns:
         Dictionary with state update, including search_query key containing the generated queries
     """
+    if len(state.get("search_query", [])) > 0:
+        # If we already have search queries, do not generate new ones.
+        # This situation can happen when the agent was called from other 
+        # agent that already generated search queries.
+        log.info("Search queries already exist, skipping generation.")
+        return {"search_query": state["search_query"]}
+
     configurable = Configuration.from_runnable_config(config)
 
     # check for custom initial search query count
@@ -116,7 +123,7 @@ def continue_to_web_scraping(state: WebSearchResultsState):
     """
     num_of_urls = len(state["web_research_result"])
     num_of_scrapings = len(state.get("web_scraping_result", []))
-    # only scraping urls that have not been scrapingd yet
+    # only scraping urls that have not been scraped yet
     if num_of_urls <= num_of_scrapings:
         return []
     
@@ -124,12 +131,6 @@ def continue_to_web_scraping(state: WebSearchResultsState):
         Send("web_scraping", {"url": url, "id": int(idx)})
         for idx, url in enumerate(state["web_research_result"][num_of_scrapings:])
     ]
-
-    # return [
-    #     Send("web_scraping", {"url": url, "id": int(idx)})
-    #     for idx, url in enumerate(state["web_research_result"])
-    # ]
-
 
 def web_scraping(state: WebScrapingState) -> OverallState:
     """LangGraph node that performs web scraping to extract content from a given URL.
@@ -141,7 +142,7 @@ def web_scraping(state: WebScrapingState) -> OverallState:
         config: Configuration for the runnable (not used in this function)
 
     Returns:
-        Dictionary with state update, including web_research_result key containing the scrapingd content in markdown format
+        Dictionary with state update, including web_research_result key containing the scraped content in markdown format
     """
     return {
         "web_scraping_result": [url_to_markdown(state["url"])],
@@ -171,7 +172,7 @@ def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
     formatted_prompt = reflection_instructions.format(
         research_topic=get_research_topic(state["messages"]),
         current_date=current_date,
-        scrapingd_pages="\n\n---\n\n".join(str(state["web_scraping_result"])),
+        scraped_pages="\n\n---\n\n".join(str(state["web_scraping_result"])),
     )
     log.info(f"Reflection Prompt: {formatted_prompt}")
     # init Reasoning Model
@@ -250,7 +251,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
     formatted_prompt = answer_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
-        scrapingd_pages="\n---\n\n".join(str(state["web_scraping_result"])),
+        scraped_pages="\n---\n\n".join(str(state["web_scraping_result"])),
     )
 
     # init Reasoning Model

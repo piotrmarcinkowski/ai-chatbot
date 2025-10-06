@@ -42,6 +42,7 @@ workflow.add_conditional_edges(
 )
 workflow.add_edge("tools", "analyze_query")
 
+# query routing
 workflow.add_conditional_edges(
     "route_query",
     select_route,
@@ -51,6 +52,7 @@ workflow.add_conditional_edges(
     }
 )
 
+# collect knowledge and analyze again
 workflow.add_conditional_edges(
     "generate_search_queries", continue_to_knowledge_collection, ["web_search", "memory_search"]
 )

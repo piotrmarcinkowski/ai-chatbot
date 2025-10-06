@@ -8,15 +8,24 @@ from typing import TypedDict
 from langgraph.graph import add_messages
 from typing_extensions import Annotated
 
+class SearchQueryState(TypedDict):
+    """
+    State to hold search queries.
+    """
+    search_query: Annotated[list, operator.add, "List of search queries generated to gather more information for answering the user's query."]
 
-class OverallState(TypedDict):
+class SearchResultState(TypedDict):
+    """
+    State to hold search results.
+    """
+    web_research_result: Annotated[list, operator.add, "List of web research results gathered from web searches."]
+    web_scraping_result: Annotated[list, operator.add, "List of web scraping results gathered from scraping web pages."]
+
+class OverallState(SearchQueryState, SearchResultState):
     """
     Main state of the deep research agent.
     """
     messages: Annotated[list, add_messages]
-    search_query: Annotated[list, operator.add]
-    web_research_result: Annotated[list, operator.add]
-    web_scraping_result: Annotated[list, operator.add]
     initial_search_query_count: int
     max_research_loops: int
     research_loop_count: int

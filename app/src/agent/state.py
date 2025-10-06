@@ -19,6 +19,12 @@ class KnowledgeSearchQueryGenerationState(TypedDict):
     """
     knowledge_search_query: Annotated[list[KnowledgeSearchQuery], ..., "List of search queries generated to gather more information for answering the user's query."]
 
+class KnowledgeSearchResultsState(TypedDict):
+    """
+    State for holding knowledge search results.
+    """
+    knowledge_search_results: Annotated[list, add_messages, "List of results obtained from knowledge search queries."]
+
 class UserQueryAnalyzerState(TypedDict):
     """State returned by the user query analyzer node.
     """

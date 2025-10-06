@@ -6,9 +6,19 @@ from langgraph.types import Send
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
 from agent.tools import tools
-from agent.state import AgentState, UserQueryAnalyzerState, KnowledgeSearchQueryGenerationState
+from agent.state import (
+    AgentState, 
+    UserQueryAnalyzerState, 
+    KnowledgeSearchQueryGenerationState, 
+    KnowledgeSearchResultsState
+)
 from agent.schema import KnowledgeSearchQueryList
-from agent.prompts import create_initial_system_message, query_analyzer_prompt, knowledge_search_query_generator_instructions
+from agent.prompts import (
+    create_initial_system_message, 
+    query_analyzer_prompt, 
+    knowledge_search_query_generator_instructions
+)
+from deep_research import graph as deep_research_graph
 from utils.time import current_local_time, local_time_zone
 
 @lru_cache(maxsize=4)
@@ -103,10 +113,22 @@ def continue_to_knowledge_collection(state: AgentState) -> list[Send]:
         for node in nodes_to_call
     ]
 
-def node_web_search(state: AgentState) -> AgentState:
+def node_web_search(state: AgentState) -> KnowledgeSearchResultsState:
     """ Placeholder for web search node.
     """
-    return state
+    # TODO: Replace deep research graph with a dedicated (simpler) web search node
+    # Temporarily using the deep research graph to perform web search and return results.
+    # In the future, this should be replaced with a dedicated web search node.
+    # The deep research graph will be used for more complex research tasks.
+    response = deep_research_graph.graph.invoke(
+        {
+            # Pass the search query in subgraph messages to build context
+            "messages": state["search_query"],
+            # Since we already have the search query, pass it to the deep research
+            # graph so it doesn't have to generate new ones.
+            "search_query": [state["search_query"]]
+        })
+    return {"knowledge_search_results": response["messages"][-1:]}
 
 def node_memory_search(state: AgentState) -> AgentState:
     """ Placeholder for memory search node.
