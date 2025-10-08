@@ -52,6 +52,8 @@ def html_to_markdown(html: str) -> str:
             return ''  # remove images entirely
         def convert_title(self, el, text, parent_tags):
             return "Title: " + text  # convert title
+        def convert_span(self, el, text, parent_tags):
+            return f" {text} " # return with spaces to avoid word concatenation
         
     options = dict(
         heading_style="ATX",
