@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 from langchain_core.messages import AnyMessage, AIMessage, HumanMessage
 from markdownify import markdownify as md
+from markdownify import MarkdownConverter
 from bs4 import BeautifulSoup
 
 log = logging.getLogger(__name__)
@@ -31,6 +32,61 @@ def get_current_date():
     """
     return datetime.now().strftime("%B %d, %Y")
 
+def html_to_markdown(html: str) -> str:
+    """
+    Converts HTML content to markdown format.
+    Args:
+        html: The HTML content as a string.
+    Returns:
+        The markdown content as a string.
+    """
+
+    class CustomConverter(MarkdownConverter):
+        def convert_style(self, el, text, parent_tags):
+            return '' # remove style tags entirely
+        def convert_script(self, el, text, parent_tags):
+            return '' # remove script tags entirely
+        def convert_a(self, el, text, parent_tags):
+            return f"[{text}]({el.get('href')})"  # just return the link text, not the URL
+        def convert_img(self, el, text, parent_tags):
+            return ''  # remove images entirely
+        def convert_title(self, el, text, parent_tags):
+            return "Title: " + text  # convert title
+        
+    options = dict(
+        heading_style="ATX",
+        bullets="-",
+        escape_asterisks=False,
+        autolinks=False,
+    )
+
+    try:
+        log.info("Size of HTML content: %d characters", len(html))
+        markdown = CustomConverter(**options).convert(html)
+        log.info("Converted HTML to Markdown, size: %d characters", len(markdown))
+        return markdown
+    except Exception as e:
+        log.error(f"Unexpected error converting HTML to Markdown: {e}")
+        return f"Unexpected error converting HTML to Markdown: {e}"
+
+def html_to_text(html: str) -> str:
+    """
+    Converts HTML content to plain text.
+    Args:
+        html: The HTML content as a string.
+    Returns:
+        The plain text content as a string.
+    """
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        text = soup.get_text(separator=" ", strip=True)
+        log.info(f"Converted HTML to Text, size: {len(text)} characters")
+        return text
+    except Exception as e:
+        log.error(f"Unexpected error converting HTML to Text: {e}")
+        return f"Unexpected error converting HTML to Text: {e}"
 
 def url_to_markdown(url: str) -> str:
     
@@ -51,33 +107,15 @@ def url_to_markdown(url: str) -> str:
         }
         response = requests.get(url, timeout=10, headers=headers)
         response.raise_for_status()  # throws exception on errors (eg. 404/500)
-        log.info(f"Fetched URL: {url} with status code {response.status_code}")
+        log.info("Fetched URL: %s with status code %s", url, response.status_code)
         html = response.text
-
-        # Strip out scripts and styles using BeautifulSoup
-        soup = BeautifulSoup(html, "html.parser")
-        for tag in soup(["script", "style"]):
-            tag.decompose()
-
-        # ensure block-level tags add a space/newline to avoid glueing text together
-        html = soup.get_text(separator=" ", strip=True)
-
-        log.info(f"Size of HTML content: {len(html)} characters")
-        markdown = md(
-            html, 
-            heading_style="ATX",
-            strip=["a", "img", "style", "script"],
-            bullets="-",
-            escape_asterisks=False,
-            autolinks=False,
-        )
-        log.info(f"Converted HTML to Markdown, size: {len(markdown)} characters")
+        markdown = html_to_markdown(html)
         return markdown
     except requests.RequestException as e:
-        log.error(f"Error fetching URL {url}: {e}")
+        log.error("Error fetching URL %s: %s", url, e)
         return f"Error fetching URL {url}: {e}"
     except Exception as e:
-        log.error(f"Unexpected error processing URL {url}: {e}")
+        log.error("Unexpected error processing URL %s: %s", url, e)
         return f"Unexpected error processing URL {url}: {e}"
     
 if __name__ == "__main__":
