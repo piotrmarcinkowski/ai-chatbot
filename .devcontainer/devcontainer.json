@@ -22,7 +22,8 @@
                 "mongodb.mongodb-vscode",
                 "Gruntfuggly.todo-tree",
                 "wayou.vscode-todo-highlight",
-                "ms-python.black-formatter"
+                "ms-python.black-formatter",
+                "GitHub.copilot"
             ]
         }
     }
