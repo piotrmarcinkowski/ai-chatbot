@@ -1,36 +1,53 @@
-from __future__ import annotations
-
 import operator
 
-from dataclasses import dataclass, field
 from typing import TypedDict
 
 from langgraph.graph import add_messages
+from langchain_core.messages import BaseMessage
 from typing_extensions import Annotated
 
-class SearchQueryState(TypedDict):
+class WebResearchQuery(TypedDict):
     """
-    State to hold search queries.
+    A single web research query with rationale.
     """
-    search_query: Annotated[list, operator.add, "List of search queries generated to gather more information for answering the user's query."]
+    user_query: Annotated[str, ..., "Condensed user query best describing the research topic and what the user wants"]  
+    search_query: Annotated[str, ..., "Query to answer by analyzing web page content."]
+    rationale: Annotated[str, ..., "Rationale for the web content analysis."]
 
-class SearchResultState(TypedDict):
+class WebResearchResult(WebResearchQuery):
     """
-    State to hold search results.
+    A single web research result.
     """
-    web_research_result: Annotated[list, operator.add, "List of web research results gathered from web searches."]
-    web_scraping_result: Annotated[list, operator.add, "List of web scraping results gathered from scraping web pages."]
+    urls: Annotated[list[str], ..., "List of URLs returned from web search."]
 
-class OverallState(SearchQueryState, SearchResultState):
+class GenerateQueryState(TypedDict):
+    """
+    State for generating web research queries.
+    """
+    user_query: Annotated[str, ..., "Condensed user query best describing the research topic and what the user wants"]
+    web_research_queries: Annotated[list[WebResearchQuery], operator.add, "List of generated web research queries that will be sent to a web search engine to gather relevant links."]
+
+class WebResearchResultState(GenerateQueryState):
+    """
+    State for holding web research results which include collected links from web research.
+    """
+    web_research_results: Annotated[list[WebResearchResult], operator.add, "List of URLs returned from web search."]
+
+class WebContentAnalysisResultState(WebResearchResultState):
+    """
+    State for holding web content analysis results.
+    """
+    web_content_analysis_results: Annotated[list, operator.add, "List of web content analysis results gathered from analyzing web pages."]
+
+class OverallState(WebContentAnalysisResultState):
     """
     Main state of the deep research agent.
     """
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list[BaseMessage], add_messages]
     initial_search_query_count: int
     max_research_loops: int
     research_loop_count: int
     reasoning_model: str
-
 
 class ReflectionState(TypedDict):
     """
@@ -41,48 +58,3 @@ class ReflectionState(TypedDict):
     follow_up_queries: Annotated[list, operator.add]
     research_loop_count: int
     number_of_ran_queries: int
-
-
-class Query(TypedDict):
-    """
-    A single search query with rationale.
-    """
-    query: str
-    rationale: str
-
-
-class QueryGenerationState(TypedDict):
-    """
-    State for generating search queries.
-    """
-    search_query: list[Query]
-
-
-class WebSearchState(TypedDict):
-    """
-    State for conducting web searches and gathering results.
-    """
-    search_query: str
-    id: str
-
-class WebSearchResultsState(TypedDict):
-    """
-    State for web search results.
-    """
-    web_research_result: list[str]
-    web_scraping_result: list[str]
-
-
-class WebScrapingState(TypedDict):
-    """
-    State for scraping web pages.
-    """
-    url: str
-    id: str
-
-@dataclass(kw_only=True)
-class SearchStateOutput:
-    """
-    Output state after conducting web searches.
-    """
-    running_summary: str = field(default=None)  # Final report

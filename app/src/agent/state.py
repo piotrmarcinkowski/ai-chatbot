@@ -2,6 +2,7 @@
 State definitions for the agent.
 Follows this guide: https://python.langchain.com/docs/how_to/structured_output
 """
+import operator
 from typing import Optional, TypedDict, Annotated
 from langgraph.graph import add_messages
 from langchain_core.messages import BaseMessage
@@ -13,17 +14,6 @@ class KnowledgeSearchQuery(TypedDict):
     query: Annotated[str, ..., "The search query to be used for knowledge collection."]
     rationale: Annotated[str, ..., "The rationale for why this search query was generated."]
 
-class KnowledgeSearchQueryGenerationState(TypedDict):
-    """
-    State for generating knowledge search queries.
-    """
-    knowledge_search_query: Annotated[list[KnowledgeSearchQuery], ..., "List of search queries generated to gather more information for answering the user's query."]
-
-class KnowledgeSearchResultsState(TypedDict):
-    """
-    State for holding knowledge search results.
-    """
-    knowledge_search_results: Annotated[list, add_messages, "List of results obtained from knowledge search queries."]
 
 class UserQueryAnalyzerState(TypedDict):
     """State returned by the user query analyzer node.
@@ -35,7 +25,13 @@ class UserQueryAnalyzerState(TypedDict):
     requires_web_search: Annotated[bool, ..., "Whether the query requires a web search to answer, eg. if user asks for current events (publicly known)"]
     requires_long_term_memory_access: Annotated[bool, ..., "Whether the query requires access to long-term memory to answer, eg user refers to past conversations or personal data"]
 
-class AgentState(UserQueryAnalyzerState, KnowledgeSearchQueryGenerationState):
+class CollectedKnowledgeState(UserQueryAnalyzerState):
+    """
+    State for holding collected knowledge.
+    """
+    knowledge_search_results: Annotated[list, operator.add, "List of results obtained from knowledge search queries."]
+
+class AgentState(CollectedKnowledgeState):
     """Represents the state of the chatbot.
     Specifies what type of information will flow 
     between different nodes and edges in a graph.

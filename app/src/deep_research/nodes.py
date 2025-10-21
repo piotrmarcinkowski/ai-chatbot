@@ -7,15 +7,16 @@ from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langchain_google_community import GoogleSearchAPIWrapper
 
-from deep_research.schema import SearchQueryList, Reflection
+from deep_research.schema import WebResearchInput, Reflection
 from deep_research.configuration import Configuration
 from deep_research.state import (
     OverallState,
-    QueryGenerationState,
+    GenerateQueryState,
     ReflectionState,
-    WebSearchState,
-    WebSearchResultsState,
-    WebScrapingState,
+    WebResearchQuery,
+    WebResearchResult,
+    WebResearchResultState,
+    WebContentAnalysisResultState,
 )
 from deep_research.prompts import (
     query_writer_instructions,
@@ -24,13 +25,13 @@ from deep_research.prompts import (
 )
 from deep_research.utils import (
     get_research_topic,
-    url_to_markdown,
     get_current_date,
 )
+from web_page_analyzer import graph as web_page_analyzer
 
 log = logging.getLogger(__name__)
 
-def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerationState:
+def generate_query(state: OverallState, config: RunnableConfig) -> GenerateQueryState:
     """LangGraph node that generates search queries based on the User's question.
 
     Uses LLM model to create an optimized search queries for web research based on
@@ -43,13 +44,6 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     Returns:
         Dictionary with state update, including search_query key containing the generated queries
     """
-    if len(state.get("search_query", [])) > 0:
-        # If we already have search queries, do not generate new ones.
-        # This situation can happen when the agent was called from other 
-        # agent that already generated search queries.
-        log.info("Search queries already exist, skipping generation.")
-        return {"search_query": state["search_query"]}
-
     configurable = Configuration.from_runnable_config(config)
 
     # check for custom initial search query count
@@ -62,7 +56,7 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
         max_retries=2,
         api_key=os.getenv("OPENAI_API_KEY"),
     )
-    structured_llm = llm.with_structured_output(SearchQueryList)
+    structured_llm = llm.with_structured_output(WebResearchInput)
 
     # Format the prompt
     current_date = get_current_date()
@@ -73,21 +67,30 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     )
     # Generate the search queries
     result = structured_llm.invoke(formatted_prompt)
-    return {"search_query": result.query}
+    return {
+        "user_query": result.user_query,
+        "web_research_queries": [query for query in result.web_research_queries],
+    }
 
 
-def continue_to_web_research(state: QueryGenerationState):
+def continue_to_web_research(state: GenerateQueryState):
     """LangGraph node that sends the search queries to the web research node.
 
     This is used to spawn n number of web research nodes, one for each search query.
     """
     return [
-        Send("web_research", {"search_query": search_query, "id": int(idx)})
-        for idx, search_query in enumerate(state["search_query"])
+        # TODO: Verify if "id" is needed in the state
+        Send("web_research",
+             {
+                "id": int(idx),
+                "search_query": research_query.query, 
+                "rationale": research_query.rationale,
+            })
+        for idx, research_query in enumerate(state["web_research_queries"])
     ]
 
 
-def web_research(state: WebSearchState, config: RunnableConfig) -> OverallState:
+def web_research(state: WebResearchQuery, config: RunnableConfig) -> WebResearchResultState:
     """LangGraph node that performs web research using the native Google Search API tool.
 
     Executes a web search using the native Google Search API tool in combination with Gemini 2.0 Flash.
@@ -110,44 +113,61 @@ def web_research(state: WebSearchState, config: RunnableConfig) -> OverallState:
         num_results=configurable.number_of_results_per_query
     )
     urls = [result["link"] for result in results]
+    result = WebResearchResult(
+        search_query=state["search_query"],
+        rationale=state["rationale"],
+        urls=urls,
+    )
     
     return {
-        "search_query": [state["search_query"]],
-        "web_research_result": urls,
+        "web_research_results": [result],
     }
 
-def continue_to_web_scraping(state: WebSearchResultsState):
+def continue_to_web_content_analysis(state: WebResearchResultState) -> list[Send]:
     """LangGraph node that sends the web research results to the web scraping node.
 
     This is used to spawn n number of web scraping nodes, one for each url query.
     """
-    num_of_urls = len(state["web_research_result"])
-    num_of_scrapings = len(state.get("web_scraping_result", []))
-    # only scraping urls that have not been scraped yet
-    if num_of_urls <= num_of_scrapings:
+    num_of_urls = sum(len(research["urls"]) for research in state["web_research_results"])
+    analysed_urls = len(state.get("web_content_analysis_result", []))
+    if num_of_urls <= analysed_urls:
         return []
     
     return [
-        Send("web_scraping", {"url": url, "id": int(idx)})
-        for idx, url in enumerate(state["web_research_result"][num_of_scrapings:])
+        Send("web_content_analysis",
+             {
+                "user_query": state["user_query"],
+                "search_query": research["search_query"],
+                "rationale": research["rationale"],
+                "url": url, 
+             }
+        ) 
+        for research in state["web_research_results"][analysed_urls:]
+        for url in research["urls"]
     ]
 
-def web_scraping(state: WebScrapingState) -> OverallState:
-    """LangGraph node that performs web scraping to extract content from a given URL.
-
-    Fetches the content of the specified URL and converts it to markdown format for easier processing.
-
-    Args:
-        state: Current graph state containing the URL to be scraped
-        config: Configuration for the runnable (not used in this function)
-
-    Returns:
-        Dictionary with state update, including web_research_result key containing the scraped content in markdown format
+def web_content_analysis(state: WebResearchResult) -> WebContentAnalysisResultState:
     """
-    return {
-        "web_scraping_result": [url_to_markdown(state["url"])],
-    }
+    LangGraph node that calls web_page_analyzer graph to scrape and analyze 
+    the content of a given web page.
+    """
+    search_query = """Original user query: {user_query}
+    Current search query: {search_query}
+    Rationale for the search query: {rationale}
+    """.format(
+        user_query=state["user_query"],
+        search_query=state["search_query"],
+        rationale=state["rationale"],
+    )
 
+    response = web_page_analyzer.graph.invoke(
+        {
+            "search_query": search_query,
+            "url": state["url"],
+        })
+    return {"web_content_analysis_results": [response["analysis_result"]]}
+
+    
 def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
     """LangGraph node that identifies knowledge gaps and generates potential follow-up queries.
 
@@ -172,7 +192,7 @@ def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
     formatted_prompt = reflection_instructions.format(
         research_topic=get_research_topic(state["messages"]),
         current_date=current_date,
-        scraped_pages="\n\n---\n\n".join(str(state["web_scraping_result"])),
+        web_research_results="\n\n---\n\n".join(state["web_content_analysis_results"])
     )
     log.info(f"Reflection Prompt: {formatted_prompt}")
     # init Reasoning Model
@@ -189,7 +209,7 @@ def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
         "knowledge_gap": result.knowledge_gap,
         "follow_up_queries": result.follow_up_queries,
         "research_loop_count": state["research_loop_count"],
-        "number_of_ran_queries": len(state["search_query"]),
+        "number_of_ran_queries": len(state["web_content_analysis_results"]),
     }
 
 
@@ -225,12 +245,11 @@ def evaluate_research(
                     "search_query": follow_up_query,
                     "id": state["number_of_ran_queries"] + int(idx),
                 },
-            )
-            for idx, follow_up_query in enumerate(state["follow_up_queries"])
+            ) for idx, follow_up_query in enumerate(state["follow_up_queries"])
         ]
 
 
-def finalize_answer(state: OverallState, config: RunnableConfig):
+def node_finalize_answer(state: OverallState, config: RunnableConfig):
     """LangGraph node that finalizes the research summary.
 
     Prepares the final output by deduplicating and formatting sources, then
@@ -251,7 +270,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
     formatted_prompt = answer_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
-        scraped_pages="\n---\n\n".join(str(state["web_scraping_result"])),
+        web_research_results="\n\n---\n\n".join(state["web_content_analysis_results"]),
     )
 
     # init Reasoning Model

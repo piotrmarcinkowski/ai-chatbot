@@ -9,17 +9,14 @@ from agent.tools import tools
 from agent.state import (
     AgentState, 
     UserQueryAnalyzerState, 
-    KnowledgeSearchQueryGenerationState, 
-    KnowledgeSearchResultsState
+    CollectedKnowledgeState
 )
-from agent.schema import KnowledgeSearchQueryList
 from agent.prompts import (
-    create_initial_system_message, 
-    query_analyzer_prompt, 
-    knowledge_search_query_generator_instructions
+    create_initial_system_message,
+    query_analyzer_prompt,
+    answer_provider_prompt,
 )
-from deep_research import graph as deep_research_graph
-from utils.time import current_local_time, local_time_zone
+from deep_research.graph import graph as deep_research_graph
 
 @lru_cache(maxsize=4)
 def _get_model(model_name: str, temperature: float = 0) -> ChatOpenAI:
@@ -69,7 +66,9 @@ def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQu
     """
     Analyzes the user's query to determine its complexity and whether it requires web search or long-term memory access.
     """
-    system_prompt = query_analyzer_prompt
+    system_prompt = query_analyzer_prompt.format(
+        collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
+    )
     messages = state["messages"]
 
     model_name = config.get('configurable', {}).get("model_name", "openai")
@@ -80,23 +79,11 @@ def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQu
     response = structured_llm.invoke([SystemMessage(content=system_prompt)] + messages)
     return response
 
-def node_generate_knowledge_search_query(state: AgentState, config: RunnableConfig) -> KnowledgeSearchQueryGenerationState:
+def node_collect_knowledge(state: AgentState):
     """
-    Generates knowledge search queries based on the user's query analysis.
+    Initiates the knowledge collection process
     """
-    model_name = config.get('configurable', {}).get("model_name", "openai")
-    llm = _get_model(model_name, temperature=1.0)
-
-    structured_llm = llm.with_structured_output(KnowledgeSearchQueryList)
-
-    formatted_prompt = knowledge_search_query_generator_instructions.format(
-        current_time_and_date=current_local_time(),
-        current_time_zone=local_time_zone(),
-        user_query=state["user_query_interpretation"],
-        num_of_queries_to_generate=1 if state["user_query_complexity"] < 5 else 2,
-    )
-    result = structured_llm.invoke(formatted_prompt)
-    return {"knowledge_search_query": result.search_query}
+    return {}
 
 def continue_to_knowledge_collection(state: AgentState) -> list[Send]:
     """
@@ -108,43 +95,37 @@ def continue_to_knowledge_collection(state: AgentState) -> list[Send]:
     if state["requires_long_term_memory_access"]:
         nodes_to_call.append("memory_search")
     return [
-        Send(node, {"search_query": search_query, "id": int(idx)})
-        for idx, search_query in enumerate(state["knowledge_search_query"])
-        for node in nodes_to_call
+        Send(node, {"messages": state["messages"], "id": int(idx)})
+        for idx, node in enumerate(nodes_to_call)
     ]
 
-def node_web_search(state: AgentState) -> KnowledgeSearchResultsState:
-    """ Placeholder for web search node.
+def node_web_search(state: AgentState) -> CollectedKnowledgeState:
+    """ Call deep_research_graph to perform a web search.
     """
-    # TODO: Replace deep research graph with a dedicated (simpler) web search node
-    # Temporarily using the deep research graph to perform web search and return results.
-    # In the future, this should be replaced with a dedicated web search node.
-    # The deep research graph will be used for more complex research tasks.
-    response = deep_research_graph.graph.invoke(
+    response = deep_research_graph.invoke(
         {
-            # Pass the search query in subgraph messages to build context
-            "messages": state["search_query"],
-            # Since we already have the search query, pass it to the deep research
-            # graph so it doesn't have to generate new ones.
-            "search_query": [state["search_query"]]
-        })
-    return {"knowledge_search_results": response["messages"][-1:]}
+            "messages": state["messages"],
+        }
+    )
+    ai_message = response["messages"][-1]
+    return {
+        "knowledge_search_results": [ai_message.content]
+    }
 
-def node_memory_search(state: AgentState) -> AgentState:
+def node_memory_search(state: AgentState):
     """ Placeholder for memory search node.
     """
-    return state
+    return {}
 
-def node_knowledge_collected(state: AgentState) -> AgentState:
+def node_knowledge_collected(state: AgentState):
     """ Placeholder for knowledge collected node.
     """
-    return state
+    return {}
 
-# TODO: Remove this node and directly connect to the query router
-def node_continue_to_query_router(state: AgentState) -> AgentState:
+def node_route_query(state: AgentState):
     """ Continues to the query router node.
     """
-    return state
+    return {}
 
 def select_route(state: AgentState) -> Literal["knowledge_collection", "END"]:
     """
@@ -157,4 +138,22 @@ def select_route(state: AgentState) -> Literal["knowledge_collection", "END"]:
     if needs_knowledge:
         return "knowledge_collection"
     else:
-        return "END"
+        return "final_answer"
+
+def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentState:
+    """
+    Generates a final answer to the user's query based on the collected knowledge and conversation history.
+    """
+    # TODO: Is complexity of the query is high add "Let me summarize and confirm the key points before answering."
+    # TODO: If complexity is very high, propose to split it into smaller sub-questions.
+    # TODO: if answer is already provided in state, use it directly. 
+    system_prompt = answer_provider_prompt.format(
+        user_query_interpretation=state["user_query_interpretation"],
+        collected_information="\n\n---\n\n".join(state["knowledge_search_results"]),
+    )
+    messages = [SystemMessage(content=system_prompt)] + state["messages"]
+
+    model_name = config.get('configurable', {}).get("model_name", "openai")
+    model = _get_model(model_name)
+    response = model.invoke(messages)
+    return {"messages": [response]}

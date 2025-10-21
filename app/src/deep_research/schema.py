@@ -2,17 +2,23 @@ from typing import List
 from pydantic import BaseModel, Field
 
 
-class SearchQueryList(BaseModel):
+class WebResearchQuery(BaseModel):
+    """
+    A single web research query with rationale.
+    """
+    query: str
+    rationale: str
+
+class WebResearchInput(BaseModel):
     """
     Model representing a list of search queries for web research.
     """
-    query: List[str] = Field(
-        description="A list of search queries to be used for web research."
+    user_query: str = Field(
+        description="The original query from the user that needs to be answered."
     )
-    rationale: str = Field(
-        description="A brief explanation of why these queries are relevant to the research topic."
+    web_research_queries: List[WebResearchQuery] = Field(
+        description="A list of web research queries to be sent to a web search engine."
     )
-
 
 class Reflection(BaseModel):
     """

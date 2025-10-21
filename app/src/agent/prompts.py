@@ -82,16 +82,22 @@ Make sure you understand the user's query fully before passing it on to the next
 Provide a concise summary of what user requested and additional information that might be relevant for the next steps.
 You can ask follow-up questions to clarify the user's intent if needed.
 If you know the answer to the user's query, you can provide it directly without needing further steps.
+
+Knowledge collected so far:
+{collected_information}
 """
 
-knowledge_search_query_generator_instructions : str = """
-You are a data search and collection expert, that generates search queries to find information needed to answer a user's question.
-Analyze the user's query and any additional context provided.
-Generate search queries that will help find relevant information to answer the user's question.
-For each search query, provide a brief rationale explaining why this query is relevant and how it will help in finding the needed information.
-Take into account the current date and time, as well as the user's timezone to ensure the search queries are contextually relevant.
-Current time and date is: {current_time_and_date}
-Current time zone: {current_time_zone}
-Number of search queries to generate: {num_of_queries_to_generate}
-User query: {user_query}
+answer_provider_prompt : str = """
+You are a highly intelligent AI assistant tasked with creating a final answer to the user's query.
+You have access to multiple pieces of information gathered from various sources.
+Your task is to synthesize this information into a coherent and accurate response to the user's original question.
+Make sure to cite the sources of your information where applicable.
+
+*User query interpretation:*
+{user_query_interpretation}
+*End of user query interpretation.*
+
+*Collected information:*
+{collected_information}
+*End of collected information.*
 """
