@@ -18,26 +18,26 @@ class WebResearchResult(WebResearchQuery):
     """
     A single web research result.
     """
-    urls: Annotated[list[str], ..., "List of URLs returned from web search."]
+    url: Annotated[str, ..., "URL returned from web search."]
 
 class GenerateQueryState(TypedDict):
     """
     State for generating web research queries.
     """
     user_query: Annotated[str, ..., "Condensed user query best describing the research topic and what the user wants"]
-    web_research_queries: Annotated[list[WebResearchQuery], operator.add, "List of generated web research queries that will be sent to a web search engine to gather relevant links."]
+    web_research_queries: Annotated[list, operator.add, "List of generated web research queries that will be sent to a web search engine to gather relevant links."]
 
 class WebResearchResultState(GenerateQueryState):
     """
     State for holding web research results which include collected links from web research.
     """
-    web_research_results: Annotated[list[WebResearchResult], operator.add, "List of URLs returned from web search."]
+    web_research_results: Annotated[list, operator.add]
 
 class WebContentAnalysisResultState(WebResearchResultState):
     """
     State for holding web content analysis results.
     """
-    web_content_analysis_results: Annotated[list, operator.add, "List of web content analysis results gathered from analyzing web pages."]
+    web_content_analysis_results: Annotated[list, operator.add]
 
 class OverallState(WebContentAnalysisResultState):
     """

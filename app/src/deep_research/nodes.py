@@ -113,14 +113,17 @@ def web_research(state: WebResearchQuery, config: RunnableConfig) -> WebResearch
         num_results=configurable.number_of_results_per_query
     )
     urls = [result["link"] for result in results]
-    result = WebResearchResult(
-        search_query=state["search_query"],
-        rationale=state["rationale"],
-        urls=urls,
-    )
-    
+    results = [
+        WebResearchResult(
+            search_query=state["search_query"],
+            rationale=state.get("rationale", ""),
+            url=url
+        )
+        for url in urls
+    ]
+
     return {
-        "web_research_results": [result],
+        "web_research_results": results,
     }
 
 def continue_to_web_content_analysis(state: WebResearchResultState) -> list[Send]:
@@ -128,9 +131,10 @@ def continue_to_web_content_analysis(state: WebResearchResultState) -> list[Send
 
     This is used to spawn n number of web scraping nodes, one for each url query.
     """
-    num_of_urls = sum(len(research["urls"]) for research in state["web_research_results"])
-    analysed_urls = len(state.get("web_content_analysis_result", []))
+    num_of_urls = len(state.get("web_research_results", []))
+    analysed_urls = len(state.get("web_content_analysis_results", []))
     if num_of_urls <= analysed_urls:
+        log.warning("All URLs have already been analyzed. No further web content analysis will be performed.")
         return []
     
     return [
@@ -139,11 +143,10 @@ def continue_to_web_content_analysis(state: WebResearchResultState) -> list[Send
                 "user_query": state["user_query"],
                 "search_query": research["search_query"],
                 "rationale": research["rationale"],
-                "url": url, 
+                "url": research["url"],
              }
-        ) 
+        )
         for research in state["web_research_results"][analysed_urls:]
-        for url in research["urls"]
     ]
 
 def web_content_analysis(state: WebResearchResult) -> WebContentAnalysisResultState:

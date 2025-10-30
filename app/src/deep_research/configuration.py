@@ -22,14 +22,13 @@ class Configuration(BaseModel):
         default="gpt-4o",
         description="The name of the language model to use for the agent's answer.",
     )
-
     number_of_initial_queries: int = Field(
-        default=1,
+        default=2,
         description="The number of initial search queries to generate.",
     )
 
     number_of_results_per_query: int = Field(
-        default=1,
+        default=2,
         description="The number of search results to retrieve per query.",
     )
 
