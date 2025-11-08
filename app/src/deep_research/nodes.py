@@ -112,7 +112,7 @@ def web_research(state: WebResearchQuery, config: RunnableConfig) -> WebResearch
         query=state["search_query"],
         num_results=configurable.number_of_results_per_query
     )
-    urls = [result["link"] for result in results]
+    urls = [result["link"] for result in results if "link" in result]
     results = [
         WebResearchResult(
             search_query=state["search_query"],
