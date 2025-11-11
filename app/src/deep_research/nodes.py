@@ -79,14 +79,12 @@ def continue_to_web_research(state: GenerateQueryState):
     This is used to spawn n number of web research nodes, one for each search query.
     """
     return [
-        # TODO: Verify if "id" is needed in the state
         Send("web_research",
              {
-                "id": int(idx),
                 "search_query": research_query.query, 
                 "rationale": research_query.rationale,
             })
-        for idx, research_query in enumerate(state["web_research_queries"])
+        for research_query in state["web_research_queries"]
     ]
 
 
@@ -246,9 +244,8 @@ def evaluate_research(
                 "web_research",
                 {
                     "search_query": follow_up_query,
-                    "id": state["number_of_ran_queries"] + int(idx),
-                },
-            ) for idx, follow_up_query in enumerate(state["follow_up_queries"])
+                    },
+            ) for follow_up_query in state["follow_up_queries"]
         ]
 
 
