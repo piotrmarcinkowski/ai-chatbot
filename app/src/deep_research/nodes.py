@@ -124,7 +124,7 @@ def web_research(state: WebResearchQuery, config: RunnableConfig) -> WebResearch
         "web_research_results": results,
     }
 
-def continue_to_web_content_analysis(state: WebResearchResultState) -> list[Send]:
+def continue_to_web_content_analysis(state: WebContentAnalysisResultState) -> list[Send]:
     """LangGraph node that sends the web research results to the web scraping node.
 
     This is used to spawn n number of web scraping nodes, one for each url query.
