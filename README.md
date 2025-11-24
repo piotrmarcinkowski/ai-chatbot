@@ -30,6 +30,17 @@ Install `vscode` with `Dev Containers` plugin.
 - Open the command palette (Crtl+Shift+P)
 - Type `Reopen in Dev Container`
 
+## Start CLI assistant within Dev Container
+
+After the container spins up, run the following command in the terminal:
+
+```
+cd app/src
+python assistant_runner.py
+```
+
+It can also be run through the `Run and Debug` tab, using `CLI (debug)` launch configuration.
+
 ## Start LangGraph server within Dev Container
 
 After the container spins up, run the following command in the terminal:
@@ -54,8 +65,13 @@ chmod +x agent_launcher.py
 
 ## Debugger
 
-If running in Dev Container you can use the provided launch configration `LangGraph Dev (agent_launcher.py)`
-It will start the langgraph server with the debugger.
+If running in Dev Container you can use one of the provided vscode launch configrations:
+- CLI Debug (cli_runner.py)
+- LangGraph Dev (agent_launcher.py)
+
+First will spin up the assistant CLI with the debugger attached.
+
+Second one will start the langgraph server with the debugger.
 
 Otherwise, start the server with the following command:
 
