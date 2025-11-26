@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
@@ -63,5 +64,11 @@ workflow.add_edge("memory_search", "knowledge_collected")
 workflow.add_edge("knowledge_collected", "analyze_query")
 workflow.add_edge("finalize_answer", END)
 
-#graph = workflow.compile(checkpointer=checkpointer, store=store)
-graph = workflow.compile(store=store)
+# When running via 'langgraph dev', use the default store and checkpointer
+if os.getenv("LANGSMITH_LANGGRAPH_API_VARIANT") == "local_dev":
+    print("Running via 'langgraph dev', not using custom checkpointer and store")
+    store = None
+    checkpointer = None
+
+graph = workflow.compile(checkpointer=checkpointer, store=store)
+print("Graph compiled successfully")

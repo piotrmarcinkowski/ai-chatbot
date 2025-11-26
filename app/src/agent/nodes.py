@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langgraph.types import Send
 from langchain_core.runnables import RunnableConfig
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage
 from agent.tools import tools
 from agent.state import (
@@ -17,9 +18,10 @@ from agent.prompts import (
     answer_provider_prompt,
 )
 from deep_research.graph import graph as deep_research_graph
+from memory.graph import graph as memory_graph
 
 @lru_cache(maxsize=4)
-def _get_model(model_name: str, temperature: float = 0) -> ChatOpenAI:
+def _get_model(model_name: str, temperature: float = 0) -> BaseChatModel:
     """
     Returns a language model instance based on the provided model name.
     Caches up to 4 different model instances.
@@ -115,7 +117,15 @@ def node_web_search(state: AgentState) -> CollectedKnowledgeState:
 def node_memory_search(state: AgentState):
     """ Placeholder for memory search node.
     """
-    return {}
+    response = memory_graph.invoke(
+        {
+            "messages": state["messages"],
+        }
+    )
+    ai_message = response["messages"][-1]
+    return {
+        "knowledge_search_results": [ai_message.content]
+    }
 
 def node_knowledge_collected(state: AgentState):
     """ Placeholder for knowledge collected node.
@@ -149,7 +159,7 @@ def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentStat
     # TODO: if answer is already provided in state, use it directly. 
     system_prompt = answer_provider_prompt.format(
         user_query_interpretation=state["user_query_interpretation"],
-        collected_information="\n\n---\n\n".join(state["knowledge_search_results"]),
+        collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
     )
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
 

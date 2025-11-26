@@ -157,9 +157,73 @@ https://github.com/langchain-ai/langchain-mongodb/blob/libs/langchain-mongodb/v0
 
 # Long-term memory
 
-This section describes short-term memory implementations used in this project.
+This section describes long-term memory implementations used in this project.
 
 ## Links
 
 - https://langchain-ai.github.io/langgraph/concepts/memory/#long-term-memory
 
+## Memory types
+
+Memory types used in AI agents are often categorized into three main types:
+- Semantic memory - facts - learned things - involves the retention of specific facts and concepts 
+- Episodic memory - eperiences - things that happened
+- Procedural memory - rules - system prompts
+
+More about memory types:
+https://www.psychologytoday.com/us/basics/memory/types-of-memory
+
+
+## Semantic memory
+
+https://docs.langchain.com/oss/python/langgraph/memory#semantic-memory
+
+### Managing semantic memories
+
+- Profile - memories can be a single, continuously updated “profile” of well-scoped and specific information about a user, organization, or other entity (including the agent itself). A profile is generally just a JSON document with various key-value pairs you’ve selected to represent your domain.
+
+- Collection - memories can be a collection of documents that are continuously updated and extended over time. Each individual memory can be more narrowly scoped and easier to generate, which means that you’re less likely to lose information over time. It’s easier for an LLM to generate new objects for new information than reconcile new information with an existing profile
+
+### Memory update strategies
+https://github.com/hinthornw/trustcall
+
+### LangGraph way of implementing long-term memory
+The Store currently supports both: 
+- [Semantic search](https://reference.langchain.com/python/langgraph/store/#langgraph.store.base.SearchOp.query)
+- [Filtering by content](https://reference.langchain.com/python/langgraph/store/#langgraph.store.base.SearchOp.filter)
+
+## Episodic memory
+https://docs.langchain.com/oss/python/langgraph/memory#episodic-memory
+
+The episodic memory involves recalling past events or actions.
+
+### MemoryStore
+https://docs.langchain.com/oss/python/langgraph/persistence#memory-store
+
+
+[Integrate MongoDB with LangGraph](https://www.mongodb.com/docs/atlas/ai-integrations/langgraph/)
+[MongoDB Store: Enabling cross-thread long-term memory](https://www.mongodb.com/company/blog/product-release-announcements/powering-long-term-memory-for-agents-langgraph)
+[LangGraph With MongoDB: Building Conversational Long-Term Memory for Intelligent AI Agents](https://dev.to/mongodb/langgraph-with-mongodb-building-conversational-long-term-memory-for-intelligent-ai-agents-2pcn)
+
+# MongoDBStore
+The MongoDBStore provides a way to store and retrieve long-term memories using MongoDB as the backend database. It stores memories in the following format:
+
+```json
+{
+  "_id": {
+    "$oid": "6927569344516936bce6de2c"
+  },
+  "key": "4a5f4555-12ec-497c-b999-7e1b36100e46",
+  "namespace": [
+    "Piotr",
+    "facts"
+  ],
+  "created_at": {
+    "$date": "2025-11-26T19:35:47.905Z"
+  },
+  "updated_at": {
+    "$date": "2025-11-26T19:35:47.905Z"
+  },
+  "value": "The user's name is Piotr."
+}
+```

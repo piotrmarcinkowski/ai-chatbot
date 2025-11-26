@@ -3,7 +3,8 @@
   "graphs": {
     "agent": "./agent/graph.py:graph",
     "deep-research": "./deep_research/graph.py:graph",
-    "web-page-analyzer": "./web_page_analyzer/graph.py:graph"
+    "web-page-analyzer": "./web_page_analyzer/graph.py:graph",
+    "memory": "./memory/graph.py:graph"
   },
   "env": ".env"
 }
