@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from typing import Literal
 from langchain_openai import ChatOpenAI
@@ -69,6 +70,7 @@ def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQu
     Analyzes the user's query to determine its complexity and whether it requires web search or long-term memory access.
     """
     system_prompt = query_analyzer_prompt.format(
+        memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
         collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
     )
     messages = state["messages"]
@@ -114,17 +116,22 @@ def node_web_search(state: AgentState) -> CollectedKnowledgeState:
         "knowledge_search_results": [ai_message.content]
     }
 
-def node_memory_search(state: AgentState):
-    """ Placeholder for memory search node.
+def node_memory_access(state: AgentState):
+    """ Call memory_graph to perform long-term memory access. Based on the c
     """
     response = memory_graph.invoke(
         {
             "messages": state["messages"],
+            "memory_access_registry": state.get("memory_access_registry", []),
         }
     )
-    ai_message = response["messages"][-1]
+    memory_results = []
+    last_message = response["messages"][-1]
+    if last_message["type"] == "ai":
+        memory_results = [ last_message["content"] ]  # Assume content contains the memory search results
     return {
-        "knowledge_search_results": [ai_message.content]
+        "knowledge_search_results": memory_results,
+        "memory_access_registry": response.get("memory_access_registry", []),
     }
 
 def node_knowledge_collected(state: AgentState):
@@ -159,6 +166,7 @@ def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentStat
     # TODO: if answer is already provided in state, use it directly. 
     system_prompt = answer_provider_prompt.format(
         user_query_interpretation=state["user_query_interpretation"],
+        memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
         collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
     )
     messages = [SystemMessage(content=system_prompt)] + state["messages"]

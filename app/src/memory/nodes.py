@@ -5,7 +5,7 @@ from langgraph.store.base import BaseStore
 from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
-from memory.state import MemoryState, MemoryAccessQueriesState, MemoryReadResultsState
+from memory.state import MemoryState, MemoryAccessQueriesState
 from memory.prompts import generate_memory_queries_prompt
 from memory.schema import MemoryAccessQueriesResult
 
@@ -42,56 +42,78 @@ def node_generate_memory_access_queries(state: MemoryState, config: RunnableConf
     structured_llm = llm.with_structured_output(MemoryAccessQueriesResult)
 
     result = structured_llm.invoke(messages)
+    result_queries = [query.dict() for query in result.memory_access_queries]
     return {
-        "memory_access_queries": result.memory_access_queries,
+        "memory_access_queries": result_queries
     }
 
 def determine_namespace(query: dict) -> tuple:
-    namespace = (query.user, query.memory_type)
+    """
+    Determines the namespace for the memory access based on the query details.
+    """
+    namespace = (query.get("user"), query.get("memory_type"))
     return namespace
 
-def read_memory(query: dict, store: BaseStore) -> list:
+def read_memory(query: dict, store: BaseStore) -> dict:
     """
     Reads from memory based on the given query.
     """
-    assert query.access_type == "read", "Query type must be 'read' for reading memory."
+    assert query.get("access_type") == "read", "Query type must be 'read' for reading memory."
 
-    read_query = query.query
+    read_query = query.get("query")
     namespace = determine_namespace(query)
 
     memories = store.search(
         namespace=namespace,
         query=read_query,
-        limit=10,
+        limit=100,
     )
-    return memories
+    return {
+        "namespace": namespace,
+        "memories": memories
+    }
 
-def write_memory(query: dict, store: BaseStore):
+def write_memory(query: dict, store: BaseStore) -> dict:
     """
     Writes to memory based on the given query.
     """
-    assert query.access_type == "write", "Query type must be 'write' for writing memory."
+    assert query.get("access_type") == "write", "Query type must be 'write' for writing memory."
 
     memory_id = str(uuid.uuid4())
-    memory = query.query
+    memory = query.get("query")
     namespace = determine_namespace(query)
     # TODO: Extend memory with metadata such as timestamp, context, conversation reference, etc.
     store.put(namespace, memory_id, memory)
+    return {
+        "namespace": namespace,
+        "stored_memory_id": memory_id,
+    }
     
 
-def node_access_memory(state: MemoryAccessQueriesState, store: BaseStore) -> MemoryReadResultsState:
+def node_access_memory(state: MemoryAccessQueriesState, store: BaseStore) -> MemoryState:
     """
     Node to access memory based on the generated memory queries (read and write).
     """
     memory_access_queries = state.get("memory_access_queries", [])
-    read_results = []
+    results = []
     for query in memory_access_queries:
-        if query.access_type == "read":
-            result = read_memory(query, store)
-            read_results.append(result)
-        if query.access_type == "write":
-            write_memory(query, store)
+        if query.get("access_type") == "read":
+            read_result = read_memory(query, store)
+            results.append(
+                {
+                    "query": query,
+                    "read_result": read_result,
+                }
+            )
+        if query.get("access_type") == "write":
+            write_result = write_memory(query, store)
+            results.append(
+                {
+                    "query": query,
+                    "write_result": write_result,
+                }
+            )   
 
     return {
-        "memory_read_results": read_results,
+        "memory_access_registry": results,
     }

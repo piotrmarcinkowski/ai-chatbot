@@ -10,7 +10,7 @@ from agent.nodes import (
     node_collect_knowledge,
     continue_to_knowledge_collection,
     node_web_search,
-    node_memory_search,
+    node_memory_access,
     node_knowledge_collected,
     node_route_query,
     select_route,
@@ -32,7 +32,7 @@ workflow.add_node("tools", tool_node)
 workflow.add_node("route_query", node_route_query)
 workflow.add_node("collect_knowledge", node_collect_knowledge)
 workflow.add_node("web_search", node_web_search)
-workflow.add_node("memory_search", node_memory_search)
+workflow.add_node("memory_search", node_memory_access)
 workflow.add_node("knowledge_collected", node_knowledge_collected)
 workflow.add_node("finalize_answer", node_finalize_answer)
 

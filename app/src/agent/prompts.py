@@ -76,15 +76,32 @@ As an answer to this message just greet the user, introduce yourself and say tha
 
 
 query_analyzer_prompt : str = """
-You are a highly intelligent AI assistant tasked with analyzing user queries.
-You are the first step in a multi-step process to answer user questions.
-Make sure you understand the user's query fully before passing it on to the next steps.
-Provide a concise summary of what user requested and additional information that might be relevant for the next steps.
-You can ask follow-up questions to clarify the user's intent if needed.
+You are a highly intelligent AI assistant tasked with analyzing and answering user queries.
+Provide a concise summary of what user requested.
 If you know the answer to the user's query, you can provide it directly without needing further steps.
+You can ask follow-up questions to clarify the user's intent if needed.
+Analyze the query and determine if it requires extra steps to be answered.
+These extra steps might be:
+- searching the web for up-to-date information,
+- accessing long-term memory to retrieve relevant information,
+- performing calculations or reasoning.
 
-Knowledge collected so far:
+Long-term memory can be accessed to retrieve information from previous interactions or stored knowledge.
+If there is something important in the chat history that is worth remembering for future interactions, you can also propose to write it to long-term memory. 
+You will be provided with the memory access registry that stores all previous memory reads and writes.
+Use the registry to avoid redundant memory accesses.
+
+Take into account all information collected so far. 
+If the collected information already contains the answer, you can end the analysis.
+Otherwise, determine the next steps needed to answer the user's query. 
+
+<memory_access_registry>
+{memory_access_registry}
+</memory_access_registry>
+
+<collected_information>
 {collected_information}
+</collected_information>
 """
 
 answer_provider_prompt : str = """
@@ -93,11 +110,19 @@ You have access to multiple pieces of information gathered from various sources.
 Your task is to synthesize this information into a coherent and accurate response to the user's original question.
 Make sure to cite the sources of your information where applicable.
 
-*User query interpretation:*
-{user_query_interpretation}
-*End of user query interpretation.*
+Take into account all information collected so far. 
+You will also be provided with the memory access registry that stores all previous memory reads and writes.
+Use the registry if needed to prepare the final answer.
 
-*Collected information:*
+<user_query_interpretation>
+{user_query_interpretation}
+</user_query_interpretation>
+
+<memory_access_registry>
+{memory_access_registry}
+</memory_access_registry>
+
+<collected_information>
 {collected_information}
-*End of collected information.*
+</collected_information>
 """

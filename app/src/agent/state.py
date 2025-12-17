@@ -30,6 +30,7 @@ class CollectedKnowledgeState(UserQueryAnalyzerState):
     State for holding collected knowledge.
     """
     knowledge_search_results: Annotated[list, operator.add, "List of results obtained from knowledge search queries."]
+    memory_access_registry: Annotated[list, operator.add, "List of memory access records, including reads and writes."]
 
 class AgentState(CollectedKnowledgeState):
     """Represents the state of the chatbot.
