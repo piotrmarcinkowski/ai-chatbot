@@ -24,18 +24,19 @@ class UserQueryAnalyzerState(TypedDict):
     user_query_complexity: Annotated[int, ..., "Complexity level of the query, higher means more complex, use fibonacci scale 1-2-3-5-8-13-21 where 1 is extremely easy question to answer that doesn't require any reasoning and can be given directly in one sentence"]
     requires_web_search: Annotated[bool, ..., "Whether the query requires a web search to answer, eg. if user asks for current events (publicly known)"]
     requires_long_term_memory_access: Annotated[bool, ..., "Whether the query requires access to long-term memory to answer, eg user refers to past conversations or personal data"]
+    user: Annotated[str, ..., "The user identifier associated with the query."]
 
 class CollectedKnowledgeState(UserQueryAnalyzerState):
     """
     State for holding collected knowledge.
     """
-    knowledge_search_results: Annotated[list, operator.add, "List of results obtained from knowledge search queries."]
-    memory_access_registry: Annotated[list, operator.add, "List of memory access records, including reads and writes."]
+    knowledge_search_results: Annotated[list, operator.add]
+    memory_access_registry: Annotated[list, operator.add]
 
 class AgentState(CollectedKnowledgeState):
     """Represents the state of the chatbot.
     Specifies what type of information will flow 
     between different nodes and edges in a graph.
     """
-    messages: Annotated[list[BaseMessage], add_messages, "The list of messages exchanged so far."]
+    messages: Annotated[list[BaseMessage], add_messages]
     

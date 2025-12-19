@@ -25,7 +25,7 @@ class GenerateQueryState(TypedDict):
     State for generating web research queries.
     """
     user_query: Annotated[str, ..., "Condensed user query best describing the research topic and what the user wants"]
-    web_research_queries: Annotated[list, operator.add, "List of generated web research queries that will be sent to a web search engine to gather relevant links."]
+    web_research_queries: Annotated[list, operator.add]
 
 class WebResearchResultState(GenerateQueryState):
     """
