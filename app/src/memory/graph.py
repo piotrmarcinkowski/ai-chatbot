@@ -7,7 +7,7 @@ from memory.nodes import (
     node_generate_memory_access_queries,
     node_access_memory,
 )
-from persistence.memory import store
+from persistence.memory import store, checkpointer
 
 class GraphConfig(TypedDict):
     """
@@ -24,10 +24,11 @@ workflow.add_edge(START, "generate_memory_access_queries")
 workflow.add_edge("generate_memory_access_queries", "access_memory")
 workflow.add_edge("access_memory", END)
 
+graph: StateGraph = None
 # When running via 'langgraph dev', use the default store and checkpointer
 if os.getenv("LANGSMITH_LANGGRAPH_API_VARIANT") == "local_dev":
     print("Running via 'langgraph dev', not using custom checkpointer and store")
-    store = None
-    checkpointer = None
+    graph = workflow.compile()
+else:
+    graph = workflow.compile(store=store, checkpointer=checkpointer)
 
-graph = workflow.compile(store=store)
