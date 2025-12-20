@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
 from agent.state import AgentState
 from agent.nodes import (
+    node_user_query_input,
     node_analyze_user_query,
     tool_node,
     tool_call_exists,
@@ -27,6 +28,7 @@ class GraphConfig(TypedDict):
 
 workflow=StateGraph(AgentState, context_schema=GraphConfig)
 
+workflow.add_node("user_query_input", node_user_query_input)
 workflow.add_node("analyze_query", node_analyze_user_query)
 workflow.add_node("tools", tool_node)
 workflow.add_node("route_query", node_route_query)
@@ -36,7 +38,8 @@ workflow.add_node("memory_search", node_memory_access)
 workflow.add_node("knowledge_collected", node_knowledge_collected)
 workflow.add_node("finalize_answer", node_finalize_answer)
 
-workflow.add_edge(START, "analyze_query")
+workflow.add_edge(START, "user_query_input")
+workflow.add_edge("user_query_input", "analyze_query")
 
 workflow.add_conditional_edges(
     "analyze_query",

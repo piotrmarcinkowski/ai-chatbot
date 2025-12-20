@@ -38,5 +38,6 @@ class AgentState(CollectedKnowledgeState):
     Specifies what type of information will flow 
     between different nodes and edges in a graph.
     """
+    user_query: Annotated[str, ..., "The original query provided by the user."]
     messages: Annotated[list[BaseMessage], add_messages]
     

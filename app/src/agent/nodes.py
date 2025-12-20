@@ -7,7 +7,7 @@ from langgraph.types import Send
 from langgraph.store.base import BaseStore
 from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from agent.tools import tools
 from agent.state import (
     AgentState, 
@@ -66,7 +66,18 @@ def tool_call_exists(state: AgentState):
         return False
     return len(last_message.tool_calls) > 0
 
-def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQueryAnalyzerState:
+def node_user_query_input(state: AgentState) -> AgentState:
+    """
+    Initial node to accept user query input.
+    """
+    user_query_message = None
+    if state.get("user_query"):
+        user_query = state["user_query"]
+        user_query_message = HumanMessage(content=user_query)
+
+    return {
+        "messages": [user_query_message]
+    }
     """
     Analyzes the user's query to determine its complexity and whether it requires web search or long-term memory access.
     """
