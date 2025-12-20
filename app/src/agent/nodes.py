@@ -4,6 +4,7 @@ from typing import Literal
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langgraph.types import Send
+from langgraph.store.base import BaseStore
 from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage
@@ -19,7 +20,7 @@ from agent.prompts import (
     answer_provider_prompt,
 )
 from deep_research.graph import graph as deep_research_graph
-from memory.graph import graph as memory_graph
+from memory.graph import workflow as memory_graph_workflow
 
 @lru_cache(maxsize=4)
 def _get_model(model_name: str, temperature: float = 0) -> BaseChatModel:
@@ -116,9 +117,14 @@ def node_web_search(state: AgentState) -> CollectedKnowledgeState:
         "knowledge_search_results": [ai_message.content]
     }
 
-def node_memory_access(state: AgentState):
+def node_memory_access(state: AgentState, config: RunnableConfig, store: BaseStore) -> CollectedKnowledgeState:
     """ Call memory_graph to perform long-term memory access. Based on the c
     """
+    # If run via 'langgraph dev' store needs to be passed from parent graph
+    # otherwise sub-graph nodes will be getting None as store parameter in its nodes.
+    # Hence we import workflow from the memory graph and compile the graph
+    # here with the store from the parent graph.
+    memory_graph = memory_graph_workflow.compile(store=store)
     response = memory_graph.invoke(
         {
             "messages": state["messages"],
