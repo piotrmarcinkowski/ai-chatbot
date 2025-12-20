@@ -8,6 +8,7 @@ from langgraph.store.base import BaseStore
 from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+from langsmith import traceable
 from agent.tools import tools
 from agent.state import (
     AgentState, 
@@ -78,6 +79,8 @@ def node_user_query_input(state: AgentState) -> AgentState:
     return {
         "messages": [user_query_message]
     }
+
+@traceable(run_type="llm", name="Analyze User Query")
 def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQueryAnalyzerState:
     """
     Analyzes the user's query to determine its complexity and whether it requires web search or long-term memory access.
@@ -133,6 +136,7 @@ def node_web_search(state: AgentState) -> CollectedKnowledgeState:
         "knowledge_search_results": [ai_message.content]
     }
 
+@traceable(name="Memory Access")
 def node_memory_access(state: AgentState, config: RunnableConfig, store: BaseStore) -> CollectedKnowledgeState:
     """ Call memory_graph to perform long-term memory access. Based on the c
     """
@@ -182,6 +186,7 @@ def select_route(state: AgentState) -> Literal["knowledge_collection", "END"]:
     else:
         return "final_answer"
 
+@traceable(run_type="llm", name="Final answer")
 def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Generates a final answer to the user's query based on the collected knowledge and conversation history.

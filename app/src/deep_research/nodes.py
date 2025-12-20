@@ -1,6 +1,8 @@
 import os
 import logging
 
+from langsmith import traceable
+
 from langchain_core.messages import AIMessage
 from langgraph.types import Send
 from langchain_core.runnables import RunnableConfig
@@ -168,7 +170,7 @@ def web_content_analysis(state: WebResearchResult) -> WebContentAnalysisResultSt
         })
     return {"web_content_analysis_results": [response["analysis_result"]]}
 
-    
+@traceable(run_type="llm", name="Reflection")
 def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
     """LangGraph node that identifies knowledge gaps and generates potential follow-up queries.
 
