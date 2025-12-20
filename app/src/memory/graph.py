@@ -14,6 +14,7 @@ class GraphConfig(TypedDict):
     Configuration for the graph.
     """
     model_name: Literal["anthropic", "openai"]
+    user: str
 
 
 workflow = StateGraph(MemoryState, context_schema=GraphConfig)

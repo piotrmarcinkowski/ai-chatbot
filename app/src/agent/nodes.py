@@ -78,10 +78,12 @@ def node_user_query_input(state: AgentState) -> AgentState:
     return {
         "messages": [user_query_message]
     }
+def node_analyze_user_query(state: AgentState, config: RunnableConfig) -> UserQueryAnalyzerState:
     """
     Analyzes the user's query to determine its complexity and whether it requires web search or long-term memory access.
     """
     system_prompt = query_analyzer_prompt.format(
+        user=state.get("user"),
         memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
         collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
     )
@@ -109,7 +111,10 @@ def continue_to_knowledge_collection(state: AgentState) -> list[Send]:
     if state["requires_web_search"]:
         nodes_to_call.append("web_search")
     if state["requires_long_term_memory_access"]:
-        nodes_to_call.append("memory_search")
+        if not state.get("user"):
+            print("Warning: No user specified for long-term memory access, skipping memory search")
+        else:
+            nodes_to_call.append("memory_search")
     return [
         Send(node, {"messages": state["messages"], "id": int(idx)})
         for idx, node in enumerate(nodes_to_call)
@@ -131,6 +136,9 @@ def node_web_search(state: AgentState) -> CollectedKnowledgeState:
 def node_memory_access(state: AgentState, config: RunnableConfig, store: BaseStore) -> CollectedKnowledgeState:
     """ Call memory_graph to perform long-term memory access. Based on the c
     """
+    user = state.get("user") or config.get('configurable', {}).get("user", "default_user")
+    config = {'configurable': {'user': user}}
+
     # If run via 'langgraph dev' store needs to be passed from parent graph
     # otherwise sub-graph nodes will be getting None as store parameter in its nodes.
     # Hence we import workflow from the memory graph and compile the graph
@@ -140,7 +148,8 @@ def node_memory_access(state: AgentState, config: RunnableConfig, store: BaseSto
         {
             "messages": state["messages"],
             "memory_access_registry": state.get("memory_access_registry", []),
-        }
+        },
+        config=config,
     )
     memory_results = []
     last_message = response["messages"][-1]
@@ -165,11 +174,10 @@ def select_route(state: AgentState) -> Literal["knowledge_collection", "END"]:
     """
     Routes the user's query to the appropriate processing path based on its complexity and requirements.
     """
-    needs_knowledge = (
-        state["requires_web_search"] or state["requires_long_term_memory_access"]
-    )
+    if state["requires_long_term_memory_access"] and not state.get("user"):
+        print("Warning: No user specified for long-term memory access")
 
-    if needs_knowledge:
+    if state["requires_web_search"] or (state["requires_long_term_memory_access"] and state.get("user")):
         return "knowledge_collection"
     else:
         return "final_answer"
@@ -179,10 +187,12 @@ def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentStat
     Generates a final answer to the user's query based on the collected knowledge and conversation history.
     """
     # TODO: Is complexity of the query is high add "Let me summarize and confirm the key points before answering."
-    # TODO: If complexity is very high, propose to split it into smaller sub-questions.
-    # TODO: if answer is already provided in state, use it directly. 
+    # TODO: If complexity is very high, propose to split it into smaller sub-questions.    
     system_prompt = answer_provider_prompt.format(
-        user_query_interpretation=state["user_query_interpretation"],
+        user=state.get("user"),
+        user_query_interpretation=state.get("user_query_interpretation"),
+        suggested_answer=state.get("answer"),
+        follow_up_questions="\n".join(state.get("follow_up_questions", [])),
         memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
         collected_information="\n\n---\n\n".join(state.get("knowledge_search_results", [])),
     )
@@ -190,5 +200,5 @@ def node_finalize_answer(state: AgentState, config: RunnableConfig) -> AgentStat
 
     model_name = config.get('configurable', {}).get("model_name", "openai")
     model = _get_model(model_name)
-    response = model.invoke(messages)
-    return {"messages": [response]}
+    result = model.invoke(messages)
+    return {"messages": [AIMessage(content=result.content)]}

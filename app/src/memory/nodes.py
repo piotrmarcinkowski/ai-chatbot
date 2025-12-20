@@ -47,24 +47,37 @@ def node_generate_memory_access_queries(state: MemoryState, config: RunnableConf
         "memory_access_queries": result_queries
     }
 
-def determine_namespace(query: dict) -> tuple:
+def determine_namespace(query: dict, config: RunnableConfig) -> tuple:
     """
     Determines the namespace for the memory access based on the query details.
+    The namespace that will be picked is heavily dependent on the user. 
+    The function first checks if the user is specified in the query,
+    otherwise it falls back to the config. If neither is provided, it uses 'default_user'.
     """
-    namespace = (query.get("user"), query.get("memory_type"))
+    user = query.get("user") or config.get('configurable', {}).get("user")
+    if not user:
+        print("Warning: No user specified in neither query nor config, using 'default_user'")
+        user = "default_user"
+
+    default_memory_type="facts"
+    memory_type = query.get("memory_type", default_memory_type)
+    # convert user and memory_type to lowercase strings to avoid issues with case sensitivity
+    user = str(user).lower()
+    memory_type = str(memory_type).lower()
+    namespace = (user, memory_type)
     return namespace
 
-def read_memory(query: dict, store: BaseStore) -> dict:
+def read_memory(query: dict, store: BaseStore, config: RunnableConfig) -> dict:
     """
     Reads from memory based on the given query.
     """
     assert query.get("access_type") == "read", "Query type must be 'read' for reading memory."
 
     read_query = query.get("query")
-    namespace = determine_namespace(query)
+    namespace = determine_namespace(query, config)
 
     memories = store.search(
-        namespace=namespace,
+        namespace,
         query=read_query,
         limit=100,
     )
@@ -73,7 +86,7 @@ def read_memory(query: dict, store: BaseStore) -> dict:
         "memories": memories
     }
 
-def write_memory(query: dict, store: BaseStore) -> dict:
+def write_memory(query: dict, store: BaseStore, config: RunnableConfig) -> dict:
     """
     Writes to memory based on the given query.
     """
@@ -81,16 +94,15 @@ def write_memory(query: dict, store: BaseStore) -> dict:
 
     memory_id = str(uuid.uuid4())
     memory = query.get("query")
-    namespace = determine_namespace(query)
+    namespace = determine_namespace(query, config)
     # TODO: Extend memory with metadata such as timestamp, context, conversation reference, etc.
     store.put(namespace, memory_id, memory)
     return {
         "namespace": namespace,
         "stored_memory_id": memory_id,
     }
-    
 
-def node_access_memory(state: MemoryAccessQueriesState, store: BaseStore) -> MemoryState:
+def node_access_memory(state: MemoryAccessQueriesState, config: RunnableConfig, *, store: BaseStore) -> MemoryState:
     """
     Node to access memory based on the generated memory queries (read and write).
     """
@@ -98,7 +110,7 @@ def node_access_memory(state: MemoryAccessQueriesState, store: BaseStore) -> Mem
     results = []
     for query in memory_access_queries:
         if query.get("access_type") == "read":
-            read_result = read_memory(query, store)
+            read_result = read_memory(query, store, config)
             results.append(
                 {
                     "query": query,
@@ -106,7 +118,7 @@ def node_access_memory(state: MemoryAccessQueriesState, store: BaseStore) -> Mem
                 }
             )
         if query.get("access_type") == "write":
-            write_result = write_memory(query, store)
+            write_result = write_memory(query, store, config)
             results.append(
                 {
                     "query": query,

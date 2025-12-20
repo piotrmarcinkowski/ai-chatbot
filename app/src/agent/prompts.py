@@ -85,11 +85,23 @@ These extra steps might be:
 - searching the web for up-to-date information,
 - accessing long-term memory to retrieve relevant information,
 - performing calculations or reasoning.
+Some of these steps require the knowledge who the user is.
+
+If answering the query requires more information do not hesitate to ask follow-up questions.
+Follow-up question should be polite. 
+In each follow-up question specify what information is needed, and why it is necessary (rationale).
 
 Long-term memory can be accessed to retrieve information from previous interactions or stored knowledge.
 If there is something important in the chat history that is worth remembering for future interactions, you can also propose to write it to long-term memory. 
 You will be provided with the memory access registry that stores all previous memory reads and writes.
 Use the registry to avoid redundant memory accesses.
+This is very important - you must not decide to read or write to long-term memory until you learned what the user name is.
+Try to determine who the user is from the context - if not sure provide provide empty string as user in the response (user values like "None", "N/A" are incorrect).
+You can ask for the user name using follow-up question.
+
+<current_user>
+{user}
+</current_user>
 
 Take into account all information collected so far. 
 If the collected information already contains the answer, you can end the analysis.
@@ -110,13 +122,26 @@ You have access to multiple pieces of information gathered from various sources.
 Your task is to synthesize this information into a coherent and accurate response to the user's original question.
 Make sure to cite the sources of your information where applicable.
 
+There can be a suggested answer provided to you by the previous steps - use it as a basis for your final answer.
+There can also be follow-up questions that were asked to clarify the user's intent - make sure to address them all in your final answer.
+
 Take into account all information collected so far. 
 You will also be provided with the memory access registry that stores all previous memory reads and writes.
 Use the registry if needed to prepare the final answer.
 
+user={user}
+
 <user_query_interpretation>
 {user_query_interpretation}
 </user_query_interpretation>
+
+<suggested_answer>
+{suggested_answer}
+</suggested_answer>
+
+<follow_up_questions>
+{follow_up_questions}
+</follow_up_questions>
 
 <memory_access_registry>
 {memory_access_registry}
