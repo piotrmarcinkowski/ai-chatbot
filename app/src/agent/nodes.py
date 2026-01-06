@@ -157,8 +157,8 @@ def node_memory_access(state: AgentState, config: RunnableConfig, store: BaseSto
     )
     memory_results = []
     last_message = response["messages"][-1]
-    if last_message["type"] == "ai":
-        memory_results = [ last_message["content"] ]  # Assume content contains the memory search results
+    if last_message.type == "ai":
+        memory_results = [ last_message.content ]  # Assume content contains the memory search results
     return {
         "knowledge_search_results": memory_results,
         "memory_access_registry": response.get("memory_access_registry", []),
