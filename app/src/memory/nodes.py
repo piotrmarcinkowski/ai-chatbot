@@ -1,12 +1,14 @@
 import uuid
+import json
 from datetime import datetime
 from functools import lru_cache
 from langgraph.store.base import BaseStore
 from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import SystemMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from memory.state import MemoryState, MemoryAccessQueriesState
-from memory.prompts import generate_memory_queries_prompt
+from memory.prompts import generate_memory_queries_prompt, analyze_memory_results_prompt
 from memory.schema import MemoryAccessQueriesResult
 
 @lru_cache(maxsize=4)
@@ -81,9 +83,10 @@ def read_memory(query: dict, store: BaseStore, config: RunnableConfig) -> dict:
         query=read_query,
         limit=100,
     )
+    memories_dicts = [ item.dict() for item in memories ]
     return {
         "namespace": namespace,
-        "memories": memories
+        "memories": memories_dicts
     }
 
 def write_memory(query: dict, store: BaseStore, config: RunnableConfig) -> dict:
@@ -129,3 +132,23 @@ def node_access_memory(state: MemoryAccessQueriesState, config: RunnableConfig, 
     return {
         "memory_access_registry": results,
     }
+
+def node_analyze_results(state: MemoryState, config: RunnableConfig) -> MemoryState:
+    """
+    Analyzes the results from memory access and prepares the response.
+    """
+    
+    datetime_now = datetime.now().isoformat()
+    messages = state["messages"]
+
+    system_prompt = analyze_memory_results_prompt.format(
+        current_date_and_time=datetime_now,
+        memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
+    )
+
+    messages = [SystemMessage(content=system_prompt)] + state["messages"]
+
+    model_name = config.get('configurable', {}).get("model_name", "openai")
+    model = _get_model(model_name)
+    result = model.invoke(messages)
+    return {"messages": [AIMessage(content=result.content)]}
