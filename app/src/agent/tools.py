@@ -1,4 +1,6 @@
 import os
+import ast
+import operator
 import logging
 from datetime import datetime, date
 from langchain_core.tools import tool
@@ -48,6 +50,72 @@ def date_difference(target_date: str) -> str:
     except Exception as e:
         return f"Error: invalid date format. Please provide 'YYYY-MM-DD'. ({str(e)})"
 
+@tool("date_operations", return_direct=True)
+def date_operations(operation: str) -> str:
+    """
+    Performs date arithmetic operations. Supports two types of operations:
+    
+    1. Calculate difference between two dates (date1 - date2):
+       Format: "YYYY-MM-DD - YYYY-MM-DD"
+       Example: "2026-02-01 - 2026-01-14" returns "18 days"
+    
+    2. Add or subtract days from a date (date +/- days):
+       Format: "YYYY-MM-DD + X days" or "YYYY-MM-DD - X days"
+       Example: "2026-01-14 + 30 days" returns "2026-02-13"
+       Example: "2026-01-14 - 10 days" returns "2026-01-04"
+    
+    All dates must be in YYYY-MM-DD format.
+    """
+    from datetime import timedelta
+    import re
+    
+    try:
+        operation = operation.strip()
+        
+        # Pattern 1: date1 - date2 (difference between two dates)
+        date_diff_pattern = r'(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})'
+        match = re.match(date_diff_pattern, operation)
+        if match:
+            date1_str, date2_str = match.groups()
+            date1 = datetime.strptime(date1_str, "%Y-%m-%d").date()
+            date2 = datetime.strptime(date2_str, "%Y-%m-%d").date()
+            delta = (date1 - date2).days
+            
+            if delta == 0:
+                return "0 days (same date)"
+            elif delta == 1:
+                return "1 day"
+            elif delta == -1:
+                return "-1 day"
+            else:
+                return f"{delta} days"
+        
+        # Pattern 2: date + X days or date - X days (date arithmetic)
+        date_add_pattern = r'(\d{4}-\d{2}-\d{2})\s*([+\-])\s*(\d+)\s*days?'
+        match = re.match(date_add_pattern, operation, re.IGNORECASE)
+        if match:
+            date_str, operator_sign, days_str = match.groups()
+            base_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            days = int(days_str)
+            
+            if operator_sign == '+':
+                result_date = base_date + timedelta(days=days)
+            else:  # operator_sign == '-'
+                result_date = base_date - timedelta(days=days)
+            
+            return result_date.strftime("%Y-%m-%d")
+        
+        # If no pattern matched
+        return ("Invalid format. Supported formats:\n"
+                "1. Date difference: 'YYYY-MM-DD - YYYY-MM-DD'\n"
+                "2. Add days: 'YYYY-MM-DD + X days'\n"
+                "3. Subtract days: 'YYYY-MM-DD - X days'")
+        
+    except ValueError as e:
+        return f"Error: Invalid date format. Please use YYYY-MM-DD. ({str(e)})"
+    except Exception as e:
+        return f"Error processing date operation: {str(e)}"
+
 @tool("local_time_zone", return_direct=True)
 def get_local_time_zone():
     """
@@ -55,6 +123,95 @@ def get_local_time_zone():
     """
     local_tz = local_time_zone()
     return str(local_tz)
+
+@tool("math_calculator", return_direct=True)
+def calculate_math_expression(expression: str) -> str:
+    """
+    Safely evaluates a mathematical expression and returns the result.
+    Supports basic arithmetic operations: +, -, *, /, //, %, ** (power).
+    Also supports mathematical functions: sqrt, sin, cos, tan, log, exp, abs, round.
+    
+    Examples:
+    - "2 + 2" returns "4"
+    - "10 * (5 + 3)" returns "80"
+    - "2 ** 8" returns "256"
+    - "sqrt(16)" returns "4.0"
+    
+    Input must be a valid mathematical expression as a string.
+    """
+    # Allowed operators
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+    
+    # Allowed functions
+    import math
+    functions = {
+        'sqrt': math.sqrt,
+        'sin': math.sin,
+        'cos': math.cos,
+        'tan': math.tan,
+        'log': math.log,
+        'log10': math.log10,
+        'exp': math.exp,
+        'abs': abs,
+        'round': round,
+        'floor': math.floor,
+        'ceil': math.ceil,
+        'pi': math.pi,
+        'e': math.e,
+    }
+    
+    def eval_node(node):
+        if isinstance(node, ast.Num):
+            return node.n
+        elif isinstance(node, ast.Constant):
+            return node.value
+        elif isinstance(node, ast.BinOp):
+            left = eval_node(node.left)
+            right = eval_node(node.right)
+            return operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            operand = eval_node(node.operand)
+            return operators[type(node.op)](operand)
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in functions:
+                func = functions[node.func.id]
+                args = [eval_node(arg) for arg in node.args]
+                return func(*args)
+            else:
+                raise ValueError(f"Function not allowed: {node.func.id if isinstance(node.func, ast.Name) else 'unknown'}")
+        elif isinstance(node, ast.Name):
+            if node.id in functions and not callable(functions[node.id]):
+                return functions[node.id]
+            else:
+                raise ValueError(f"Variable not allowed: {node.id}")
+        else:
+            raise ValueError(f"Unsupported operation: {type(node).__name__}")
+    
+    try:
+        # Parse the expression
+        tree = ast.parse(expression, mode='eval')
+        # Evaluate safely
+        result = eval_node(tree.body)
+        log.debug(f"Math calculator: '{expression}' = {result}")
+        return str(result)
+    except SyntaxError as e:
+        return f"Syntax error: Invalid mathematical expression. {str(e)}"
+    except ValueError as e:
+        return f"Error: {str(e)}"
+    except ZeroDivisionError:
+        return "Error: Division by zero."
+    except Exception as e:
+        return f"Error calculating expression: {str(e)}"
 
 class ArxivTopic(BaseModel):
     topic: str = Field(description="The topic of the article to search on arxiv.")
@@ -97,13 +254,13 @@ def google_web_search(query: str) -> str:
     log.debug("Google search results for query '%s': %s", query, results)
     return results
 
-def init_tools():
+def init_all_tools():
     """
     Initializes and returns a list of tools.
     """
     log.info("Initializing tools...")
-    _tools = [get_current_datetime, date_difference, get_current_utc_time, get_local_time_zone,
-             arxiv_search, wikipedia_search
+    _tools = [get_current_datetime, date_difference, date_operations, get_current_utc_time, get_local_time_zone,
+             calculate_math_expression, arxiv_search, wikipedia_search
     ]
 
     init_tavily_search_tool(_tools)
@@ -135,4 +292,4 @@ def init_google_search_tool(tools_list):
     else:
         log.warning("Google API key and CSE ID must be set in environment variables. Google search tool will not be available.")
 
-tools = init_tools()
+all_tools = init_all_tools()

@@ -26,3 +26,5 @@ class Config:
     
 app_config = Config('config.json')
 assistant_config = Config('assistant.json')
+
+ASSISTANT_DEFAULT_NAME = "Alfred" # to honor Batman’s loyal assistant
