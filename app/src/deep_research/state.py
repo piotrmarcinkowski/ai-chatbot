@@ -48,6 +48,7 @@ class OverallState(WebContentAnalysisResultState):
     max_research_loops: int
     research_loop_count: int
     reasoning_model: str
+    extra_instructions: str
 
 class ReflectionState(TypedDict):
     """

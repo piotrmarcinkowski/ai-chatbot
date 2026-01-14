@@ -14,6 +14,10 @@ Instructions:
 - Don't produce more than {number_queries} queries.
 - Queries should ensure that the most current information is gathered. The current date is {current_date}.
 
+<extra_instructions>
+{extra_instructions}
+</extra_instructions>
+
 Format: 
 ```json
 {{
@@ -103,6 +107,10 @@ Instructions:
 Carefully analyze the provided information, extract key insights, and synthesize them into a coherent and comprehensive response.
 Try to match the tone and style of the user's question but keep it informative and polite.
 Follow user guidelines and preferences regarding the form of the answer (if these were provided).
+
+<extra_instructions>
+{extra_instructions}
+</extra_instructions>
 
 User Context:
 {research_topic}

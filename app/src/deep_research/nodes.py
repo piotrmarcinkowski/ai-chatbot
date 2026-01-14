@@ -62,10 +62,13 @@ def generate_query(state: OverallState, config: RunnableConfig) -> GenerateQuery
 
     # Format the prompt
     current_date = get_current_date()
+    extra_instructions = state.get("extra_instructions", "")
+    
     formatted_prompt = query_writer_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
         number_queries=state["initial_search_query_count"],
+        extra_instructions=extra_instructions,
     )
     # Generate the search queries
     result = structured_llm.invoke(formatted_prompt)
@@ -269,10 +272,13 @@ def node_finalize_answer(state: OverallState, config: RunnableConfig):
 
     # Format the prompt
     current_date = get_current_date()
+    extra_instructions = state.get("extra_instructions", "")
+    
     formatted_prompt = answer_instructions.format(
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
         web_research_results="\n\n---\n\n".join(state["web_content_analysis_results"]),
+        extra_instructions=extra_instructions,
     )
 
     # init Reasoning Model

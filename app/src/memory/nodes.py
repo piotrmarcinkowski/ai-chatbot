@@ -36,6 +36,9 @@ def node_generate_memory_access_queries(state: MemoryState, config: RunnableConf
     datetime_now = datetime.now().isoformat()
     messages = state["messages"]
     system_prompt = generate_memory_queries_prompt.format(
+        extra_instructions=state.get("extra_instructions", ""),
+        memory_access_registry="\n\n---\n\n".join(json.dumps(item) for item in state.get("memory_access_registry", [])),
+        user=state.get("user", "default_user"),
         current_date_and_time=datetime_now,
     )
     messages = [system_prompt] + messages
