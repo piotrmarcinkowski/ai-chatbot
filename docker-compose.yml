@@ -1,25 +1,29 @@
+name: ai-chatbot-dev
+
 include:
-  - persistence/mongodb/docker-compose.yml
+  - persistence/mongodb/docker-compose-dev.yml
+
 services:
   ai-chatbot:
     build:
       context: ./app
       dockerfile: Dockerfile
-      target: ai-chatbot-prod
+      target: ai-chatbot-dev
     ports:
-      - "8501:8501" # Streamlit port
-      - "2024:2024" # Langgraph server port
+      - "8123:8123" # LangGraph server port (default for 'langgraph up')
     depends_on:
-      - ai-chatbot-mongodb
-    # TODO: #vibe-coding - verify if this works
-    # healthcheck:
-    #   test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
+      - ai-chatbot-mongodb-dev
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8123/ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     user: "${UID}:${GID}"
     env_file:
       - path: .env
         required: false
     volumes:
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      # MongoDB for custom checkpointer
+      - MONGODB_URI=mongodb://ai-chatbot-mongodb-dev:27017

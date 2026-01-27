@@ -1,0 +1,25 @@
+name: ai-chatbot-devcontainer
+
+include:
+  - persistence/mongodb/docker-compose-devcontainer.yml
+
+services:
+  ai-chatbot:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      target: ai-chatbot-devcontainer
+    ports:
+      - "2024:2024" # standard dev port used by 'langgraph dev'
+      - "5678:5678" # debug port for VSCode remote debugging
+    depends_on:
+      - ai-chatbot-mongodb-devcontainer
+    user: "${UID}:${GID}"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      # MongoDB for custom checkpointer
+      - MONGODB_URI=mongodb://ai-chatbot-mongodb-devcontainer:27017

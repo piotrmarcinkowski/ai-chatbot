@@ -8,22 +8,22 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langsmith import traceable
-from agent.tools import all_tools
-from agent.state import (
+from main.tools import all_tools
+from main.state import (
     AgentState,
     ProcessQueryState,
     CollectedKnowledgeState,
 )
-from agent.prompts import (
+from main.prompts import (
     query_processing_prompt,
     final_answer_provider_prompt,
 )
-from agent.schema import (
+from main.schema import (
     ProcessQueryResult,
 )
 from deep_research.graph import graph as deep_research_graph
 from memory.graph import workflow as memory_graph_workflow
-from utils.time import (
+from agent_utils.time import (
     local_time_zone,
     current_local_time
 )

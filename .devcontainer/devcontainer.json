@@ -1,6 +1,6 @@
 {
     "name": "ai-chatbot-devcontainer",
-    "dockerComposeFile": ["../docker-compose.yml", "docker-compose.dev.yml"],
+    "dockerComposeFile": ["../docker-compose-devcontainer.yml"],
     "service": "ai-chatbot",
     "workspaceFolder": "/ai-chatbot",
     "mounts": [

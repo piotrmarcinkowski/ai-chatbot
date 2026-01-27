@@ -7,7 +7,7 @@ from langchain_core.tools import tool
 from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
 from pydantic import BaseModel, Field
-from utils.time import current_local_time, current_utc_time, local_time_zone
+from agent_utils.time import current_local_time, current_utc_time, local_time_zone
 from langchain_google_community import GoogleSearchAPIWrapper
 from langchain_tavily import TavilySearch
 

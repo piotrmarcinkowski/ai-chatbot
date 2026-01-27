@@ -2,8 +2,8 @@ import os
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
-from agent.state import AgentState
-from agent.nodes import (
+from main.state import AgentState
+from main.nodes import (
     node_user_query_input,
     node_process_query,
     node_route_after_processing,

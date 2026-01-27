@@ -1,94 +1,114 @@
 # ai-chatbot
-General purpose AI chatbot.
+LangGraph-powered multi-agent general purpose AI chatbot.
 
-# Configuration
-Create `.env` file in the project's root folder basing on the attached [env.example](env.example) file.
+## Architecture
 
-# Run
+The project consists of two main components:
 
-| :zap:  Out of order - docker compose environment needs fixing [issue](https://github.com/piotrmarcinkowski/ai-chatbot/issues/20)
-|------------------------------------------|
+1. **LangGraph Server** (Backend) - Runs the AI agent graph, exposed via REST API
+2. **UI Clients** (Frontend) - Multiple interfaces to interact with the agent:
+   - CLI client
+   - Streamlit web interface
 
-The following command spins up all required containers in production mode. 
-```
-docker compose up
-```
+## Configuration
 
-Note: For development, use Dev Container setup described in the next section.
+Create `.env` file in the project's root folder based on [env.example](env.example).
 
-# Dev container (vscode)
+## Quick Start
 
-This project supports development in a container using vscode's Dev Container plugin.
-Devcontainer environment is the same as the environment used in the final deployment
-with minor changes required for vscode addons (eg. `git` package is installed in devcontainer).
-See `ai-chatbot-dev` image in [./app/Dockerfile]
+### Quick Start / Development
 
-## Prerequisites
-Install `vscode` with `Dev Containers` plugin.
+For quick testing or development (uses `langgraph dev`, not production-grade):
 
-## Run Dev Container
-- Open the command palette (Crtl+Shift+P)
-- Type `Reopen in Dev Container`
-
-## Start CLI assistant within Dev Container
-
-After the container spins up, run the following command in the terminal:
-
-```
-cd app/src
-python assistant_runner.py
+```bash
+docker compose -p ai-chatbot-prod up
 ```
 
-It can also be run through the `Run and Debug` tab, using `CLI (debug)` launch configuration.
+⚠️ **This is NOT suitable for production** - it runs `langgraph dev` which is a development server.
+⚠️ **Use the `-p ai-chatbot-prod` flag** to avoid conflicts with the dev container environment.
 
-## Start LangGraph server within Dev Container
+See [app/docs/deployment.md](app/docs/deployment.md) for production deployment instructions.
 
-After the container spins up, run the following command in the terminal:
+### UI Clients
 
+Once the server is running, you can use any of the UI clients:
+
+#### CLI Client
+
+```bash
+cd ui/cli
+pip install -r requirements.txt
+python chatbot_cli.py
 ```
+
+#### Streamlit Web UI
+
+```bash
+cd ui/streamlit
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Access the web UI at `http://localhost:8501`
+
+## Development (Dev Container)
+
+This project supports development using VS Code's Dev Container.
+
+### Prerequisites
+
+- VS Code with `Dev Containers` extension
+
+### Start Dev Container
+
+1. Open Command Palette (Ctrl+Shift+P)
+2. Select `Dev Containers: Reopen in Container`
+
+### Start LangGraph Server in Dev Container
+
+```bash
 cd app/src
 langgraph dev --host 0.0.0.0 --no-browser
 ```
 
-It can also be run through the `Run and Debug` tab, using `LangGraph Dev` launch configuration.
+Or use the `Run and Debug` tab → `LangGraph Dev` launch configuration.
 
-Open LangGraph Studio with the following link:
-https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024 
+Access LangGraph Studio: https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
 
-Alternatively you can use a handy script that does all of the above. 
-Launch it with
+### Start UI Clients in Dev Container
 
+After starting the LangGraph server, you can run UI clients:
+
+#### CLI Client
+```bash
+cd ui/cli
+python chatbot_cli.py
 ```
-chmod +x agent_launcher.py
-./agent_launcher.py
+
+Or use `Run and Debug` → `CLI Debug (LangGraph SDK Client)`
+
+#### Streamlit UI
+```bash
+cd ui/streamlit
+streamlit run app.py
 ```
 
-## Debugger
+Or use `Run and Debug` → `Streamlit UI`
 
-If running in Dev Container you can use one of the provided vscode launch configrations:
-- CLI Debug (cli_runner.py)
-- LangGraph Dev (agent_launcher.py)
+### Debugging
 
-First will spin up the assistant CLI with the debugger attached.
+Available VS Code launch configurations:
+- **LangGraph Dev** - Start LangGraph server with debugger
+- **CLI Debug** - Start CLI client with debugger
+- **Streamlit UI** - Start Streamlit with debugger
 
-Second one will start the langgraph server with the debugger.
+For manual debugging, start the server with:
 
-Otherwise, start the server with the following command:
-
-```
+```bash
 langgraph dev --debug-port 5678 --wait-for-client --host 0.0.0.0 --no-browser
 ```
 
-https://docs.langchain.com/langgraph-platform/quick-start-studio#optional-attach-a-debugger
-
-```
-INFO:langgraph_api.cli:🐛 Debugger listening on port 5678. Waiting for client to attach...
-INFO:langgraph_api.cli:To attach the debugger:
-INFO:langgraph_api.cli:1. Open your python debugger client (e.g., Visual Studio Code).
-INFO:langgraph_api.cli:2. Use the 'Remote Attach' configuration with the following settings:
-INFO:langgraph_api.cli:   - Host: 0.0.0.0
-INFO:langgraph_api.cli:   - Port: 5678
-```
+See [LangGraph debugging docs](https://docs.langchain.com/langgraph-platform/quick-start-studio#optional-attach-a-debugger)
 
 ## Troubleshooting
 
@@ -99,6 +119,30 @@ See the following commands in the command palette (Crtl+Shift+P):
 - Dev Containers: Show Previous Log
 - Dev Containers: Show Container Log
 - Dev Containers Developer: Show All Logs...
+
+**Useful Docker Commands**
+```
+# Check container status
+docker compose ps -a
+
+# View container logs (last 100 lines)
+docker compose logs ai-chatbot --tail=100
+
+# Follow logs in real-time
+docker compose logs -f ai-chatbot
+
+# Check health status
+docker inspect <container-name> --format='{{json .State.Health}}' | jq
+
+# Execute commands inside container
+docker exec ai-chatbot-dev-ai-chatbot-1 <command>
+
+# Restart the container
+docker compose restart ai-chatbot
+
+# Rebuild and restart
+docker compose up -d --build ai-chatbot
+```
 
 ## Issues
 

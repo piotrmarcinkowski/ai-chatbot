@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "LangGraph Dev (agent_launcher.py)",
+      "name": "LangGraph Dev (langgraph_dev_runner.py)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/agent_launcher.py",
+      "program": "${workspaceFolder}/app/src/langgraph_dev_runner.py",
       "python": "/usr/local/bin/python3",
       "console": "internalConsole"
     },

@@ -1,11 +1,13 @@
-# This file implements the main logic for running the assistant application.
+# Runs a console chat application that interacts directly with the agent graph (no FastAPI server).
+# Used for local testing and debugging.
+# There is a vscode run configuration to easily launch this file.
 
 import logging
 import sys
 import uuid
 from langchain_core.messages import HumanMessage
-from agent.graph import graph as agent_graph
-from agent.state import AgentState
+from main.graph import graph as agent_graph
+from main.state import AgentState
 from config.config_loader import assistant_config
 
 logging.basicConfig(level=logging.WARN)
