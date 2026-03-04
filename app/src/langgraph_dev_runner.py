@@ -13,6 +13,13 @@ def open_browser_later(url, delay=2):
 def main():
     os.chdir("app/src")
 
+    # Check if LANGSMITH_API_KEY is set before starting the server
+    if not os.getenv("LANGSMITH_API_KEY"):
+        print("Warning: LANGSMITH_API_KEY is not set. LangSmith features will be unavailable.")
+        return
+    
+    print("Starting LangGraph dev server...")
+
     url = "https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024"
     threading.Thread(target=open_browser_later, args=(url, 5), daemon=True).start()
 

@@ -21,11 +21,17 @@ Create `.env` file in the project's root folder based on [env.example](env.examp
 For quick testing or development (uses `langgraph dev`, not production-grade):
 
 ```bash
-docker compose -p ai-chatbot-prod up
+docker compose --env-file env/dev.env up -d
 ```
 
 ⚠️ **This is NOT suitable for production** - it runs `langgraph dev` which is a development server.
-⚠️ **Use the `-p ai-chatbot-prod` flag** to avoid conflicts with the dev container environment.
+
+Other environments:
+
+```bash
+# Production (after building the image)
+docker compose --env-file env/prod.env up -d
+```
 
 See [app/docs/deployment.md](app/docs/deployment.md) for production deployment instructions.
 
@@ -135,7 +141,7 @@ docker compose logs -f ai-chatbot
 docker inspect <container-name> --format='{{json .State.Health}}' | jq
 
 # Execute commands inside container
-docker exec ai-chatbot-dev-ai-chatbot-1 <command>
+docker compose exec ai-chatbot <command>
 
 # Restart the container
 docker compose restart ai-chatbot

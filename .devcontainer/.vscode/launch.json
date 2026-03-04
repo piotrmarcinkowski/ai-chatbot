@@ -7,6 +7,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/app/src/langgraph_dev_runner.py",
       "python": "/usr/local/bin/python3",
+      "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole"
     },
     {
@@ -17,10 +18,31 @@
       "python": "${workspaceFolder}/.venv/bin/python",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/app/src",
+      "envFile": "${workspaceFolder}/.env",
       "env": {
         "PYTHONPATH": "${workspaceFolder}/app/src"
       },
       "justMyCode": false
+    },
+    {
+      "name": "UI - CLI Client",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ui/cli/chatbot_cli.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/ui/cli",
+    },
+    {
+      "name": "UI - Streamlit",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": [
+          "run",
+          "app.py"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/ui/streamlit",
     }
   ]
 }

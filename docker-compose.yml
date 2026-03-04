@@ -1,29 +1,85 @@
-name: ai-chatbot-dev
-
-include:
-  - persistence/mongodb/docker-compose-dev.yml
-
 services:
   ai-chatbot:
+    image: ${BACKEND_IMAGE}
     build:
       context: ./app
       dockerfile: Dockerfile
-      target: ai-chatbot-dev
+      target: ${BACKEND_BUILD_TARGET}
     ports:
-      - "8123:8123" # LangGraph server port (default for 'langgraph up')
+      - "${BACKEND_PORT}:8000"
     depends_on:
-      - ai-chatbot-mongodb-dev
+      mongodb:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8123/ok"]
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/ok"]
       interval: 30s
       timeout: 10s
       retries: 3
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     env_file:
-      - path: .env
-        required: false
+      - path: ${ENV_FILE}
+        required: true
     volumes:
       - /etc/localtime:/etc/localtime:ro
     environment:
-      # MongoDB for custom checkpointer
-      - MONGODB_URI=mongodb://ai-chatbot-mongodb-dev:27017
+      - MONGODB_URI=mongodb://mongodb:27017/${MONGO_DB}
+      - REDIS_URI=${REDIS_URI}
+      - DATABASE_URI=${DATABASE_URI}
+      - LANGGRAPH_SERVER_URL=${LANGGRAPH_SERVER_URL}
+    networks:
+      - app_network
+    profiles: ["dev", "devcontainer", "prod"]
+
+  mongodb:
+    image: mongo:8.0.6
+    restart: unless-stopped
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app_network
+    profiles: ["dev", "devcontainer", "prod"]
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: langgraph
+      POSTGRES_USER: langgraph
+      POSTGRES_PASSWORD: langgraph
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langgraph"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+    profiles: ["prod"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    networks:
+      - app_network
+    profiles: ["prod"]
+
+networks:
+  app_network:
+    name: ${COMPOSE_PROJECT_NAME}_network
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    name: ${COMPOSE_PROJECT_NAME}_mongodb_data
+  postgres-data:
+    name: ${COMPOSE_PROJECT_NAME}_postgres_data
+  redis-data:
+    name: ${COMPOSE_PROJECT_NAME}_redis_data

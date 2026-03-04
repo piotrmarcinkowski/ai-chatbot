@@ -28,15 +28,15 @@ build-prod:
 # Start production environment
 up-prod: build-prod
 	@echo "Starting production environment..."
-	@docker compose -f docker-compose.prod.yml up -d
+	@docker compose --env-file env/prod.env up -d
 	@echo "✅ Production environment started!"
 	@echo ""
-	@echo "Server available at: http://localhost:8123"
-	@echo "Health check: curl http://localhost:8123/ok"
+	@echo "Server available at: $$(grep -E '^SERVER_URL=' env/prod.env | cut -d= -f2)"
+	@echo "Health check: curl $$(grep -E '^SERVER_URL=' env/prod.env | cut -d= -f2)/ok"
 
 # Stop containers
 down:
-	@docker compose -f docker-compose.prod.yml down
+	@docker compose --env-file env/prod.env down
 
 # Rebuild everything
 rebuild: down build-prod up-prod
