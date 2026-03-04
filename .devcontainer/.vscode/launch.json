@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "LangGraph Dev (langgraph_dev_runner.py)",
+      "name": "LangGraph Studio",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/app/src/langgraph_dev_runner.py",
@@ -23,6 +23,16 @@
         "PYTHONPATH": "${workspaceFolder}/app/src"
       },
       "justMyCode": false
+    },
+    {
+      "name": "LangGraph API Server",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/src/langgraph_dev_runner.py",
+      "args": ["--no-browser"],
+      "python": "/usr/local/bin/python3",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "internalConsole"
     },
     {
       "name": "UI - CLI Client",

@@ -75,16 +75,20 @@ When you start the dev container, by default no services are started and you can
 
 ## VS Code Launch Configurations
 
-1. `LangGraph Studio (langgraph_dev_runner.py)`
+1. `LangGraph Studio`
 
 Starts LangGraph API server with hot reload and opens LangGraph Studio in the browser.
 LangGraph Studio provides a web UI for managing and testing your agent graphs, making it a great choice for development and debugging. However, it doesn't support custom checkpointer and store implementations.
 
 + most handy - starts full dev env (LangGraph Studio, API server with hot reload)
 + vscode debugger support
-- Langgraph Studio doesn't support custom checkpointer and store
+- LangGraph Studio doesn't support custom checkpointer and store
 
-2. `CLI Debug (cli_runner.py)`
+2. `LangGraph API Server`
+
+Starts the LangGraph API server with hot reload without opening the browser. This is useful when you only need the API server running — for example, to use it together with the `UI - CLI Client` or `UI - Streamlit` launch configs, or when you want to test custom checkpointer and store implementations that are not supported in LangGraph Studio.
+
+3. `CLI Debug (cli_runner.py)`
 
 Starts a standalone CLI client that runs directly against an instance of the agent graph without requiring a separate LangGraph API server. This is useful for fast testing and development of the agent graph logic without the overhead of starting the full LangGraph Studio environment. It also allows you to test custom checkpointer and store implementations that may not be supported in LangGraph Studio.
 
@@ -94,13 +98,13 @@ Starts a standalone CLI client that runs directly against an instance of the age
 + vscode debugger support
 + can be used to test custom checkpointer and store
 
-3. `UI - CLI Client`
+4. `UI - CLI Client`
 
-CLI client that requires LangGraph API server to be started separately. This is useful for testing the CLI client in an environment that closely resembles production, where the client interacts with a running LangGraph API server. 
+CLI client that connects to a running LangGraph API server. Start the server first using `LangGraph Dev (langgraph_dev_runner.py)` or `LangGraph API Server (no browser)`. This is useful for testing the CLI client in an environment that closely resembles production, where the client interacts with a running LangGraph API server.
 
-4. `UI - Streamlit`
+5. `UI - Streamlit`
 
-Starts the Streamlit server that can be used to interact with the LangGraph API server through a web UI. This is useful for testing and developing the Streamlit UI client, allowing you to see changes in real-time as you develop the UI components. It also provides a more user-friendly interface for interacting with the agent graph compared to the CLI client.
+Starts the Streamlit server that can be used to interact with the LangGraph API server through a web UI. Requires a running LangGraph API server — start it first using `LangGraph Studio` or `LangGraph API Server`. This is useful for testing and developing the Streamlit UI client, allowing you to see changes in real-time as you develop the UI components. It also provides a more user-friendly interface for interacting with the agent graph compared to the CLI client.
 
 ## Troubleshooting
 
