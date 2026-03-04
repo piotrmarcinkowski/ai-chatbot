@@ -12,6 +12,7 @@
       "source=${localWorkspaceFolder}/.devcontainer/.vscode,target=/ai-chatbot/.vscode,type=bind"
     ],
     "remoteUser": "chatbot",
+    "forwardPorts": [2024],
     "remoteEnv": {
 
     },

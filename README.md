@@ -70,51 +70,37 @@ This project supports development using VS Code's Dev Container.
 1. Open Command Palette (Ctrl+Shift+P)
 2. Select `Dev Containers: Reopen in Container`
 
-### Start LangGraph Server in Dev Container
+Dev Container uses the same Docker Compose configuration as dev environment
+When you start the dev container, by default no services are started and you can choose which ones to start based on your needs. You can start the LangGraph server, CLI client, or Streamlit UI independently, depending on what you want to work on. Use the provided VS Code launch configurations for an easy start and debugging experience.
 
-```bash
-cd app/src
-langgraph dev --host 0.0.0.0 --no-browser
-```
+## VS Code Launch Configurations
 
-Or use the `Run and Debug` tab → `LangGraph Dev` launch configuration.
+1. `LangGraph Studio (langgraph_dev_runner.py)`
 
-Access LangGraph Studio: https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
+Starts LangGraph API server with hot reload and opens LangGraph Studio in the browser.
+LangGraph Studio provides a web UI for managing and testing your agent graphs, making it a great choice for development and debugging. However, it doesn't support custom checkpointer and store implementations.
 
-### Start UI Clients in Dev Container
++ most handy - starts full dev env (LangGraph Studio, API server with hot reload)
++ vscode debugger support
+- Langgraph Studio doesn't support custom checkpointer and store
 
-After starting the LangGraph server, you can run UI clients:
+2. `CLI Debug (cli_runner.py)`
 
-#### CLI Client
-```bash
-cd ui/cli
-python chatbot_cli.py
-```
+Starts a standalone CLI client that runs directly against an instance of the agent graph without requiring a separate LangGraph API server. This is useful for fast testing and development of the agent graph logic without the overhead of starting the full LangGraph Studio environment. It also allows you to test custom checkpointer and store implementations that may not be supported in LangGraph Studio.
 
-Or use `Run and Debug` → `CLI Debug (LangGraph SDK Client)`
++ doesn't start nor require LangGraph API server - creates instance of agent graph and runs CLI chat directly against it
++ fast start
++ no extra dependencies
++ vscode debugger support
++ can be used to test custom checkpointer and store
 
-#### Streamlit UI
-```bash
-cd ui/streamlit
-streamlit run app.py
-```
+3. `UI - CLI Client`
 
-Or use `Run and Debug` → `Streamlit UI`
+CLI client that requires LangGraph API server to be started separately. This is useful for testing the CLI client in an environment that closely resembles production, where the client interacts with a running LangGraph API server. 
 
-### Debugging
+4. `UI - Streamlit`
 
-Available VS Code launch configurations:
-- **LangGraph Dev** - Start LangGraph server with debugger
-- **CLI Debug** - Start CLI client with debugger
-- **Streamlit UI** - Start Streamlit with debugger
-
-For manual debugging, start the server with:
-
-```bash
-langgraph dev --debug-port 5678 --wait-for-client --host 0.0.0.0 --no-browser
-```
-
-See [LangGraph debugging docs](https://docs.langchain.com/langgraph-platform/quick-start-studio#optional-attach-a-debugger)
+Starts the Streamlit server that can be used to interact with the LangGraph API server through a web UI. This is useful for testing and developing the Streamlit UI client, allowing you to see changes in real-time as you develop the UI components. It also provides a more user-friendly interface for interacting with the agent graph compared to the CLI client.
 
 ## Troubleshooting
 

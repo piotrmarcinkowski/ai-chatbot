@@ -11,9 +11,8 @@ The AI Chatbot uses a **client-server architecture** with LangGraph server as th
 │  Docker Container: ai-chatbot           │
 │  ┌───────────────────────────────────┐  │
 │  │  LangGraph Server (FastAPI)       │  │
-│  │  - Port 8124 (production)         │  │
-│  │  - Port 8123 (development)        │  │
-│  │  - Port 2024 (devcontainer)       │  │
+│  │  - Host port: LANGGRAPH_API_PORT  |  |
+│  │  - Container port: 8000           │  │
 │  │  - Exposes all graphs via REST    │  │
 │  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
@@ -36,20 +35,23 @@ These were not included in the diagram for simplicity.
 
 ✅ Dev Environment (default)
 File: docker-compose.yml
+Env file: .env
 Target: ai-chatbot-dev stage
-Port: 8123 (LangGraph dev server)
-Command: langgraph dev --host 0.0.0.0 --port 8123 --no-browser --no-reload
+Port: LANGGRAPH_API_PORT (default 8123) → 8000
+Command: langgraph dev --host 0.0.0.0 --port 8000 --no-browser --no-reload
 
 ✅ Devcontainer Environment
-File: docker-compose-devcontainer.yml
+File: .devcontainer/docker-compose.devcontainer.yml
+Env file: .devcontainer/.env
 Target: ai-chatbot-devcontainer stage
-Port: 2024 (dev), 5678 (debug)
+Port: LANGGRAPH_API_PORT (default 2024) → 8000
 Command: 'sleep infinity' (correct for devcontainer)
 
 ✅ Production Environment
-File: docker-compose.prod.yml
+File: docker-compose.yml
+Env file: env/prod.env
 Image: ai-chatbot-prod:latest (pre-built with langgraph build)
-Port: 8124 → 8000 (production server port)
+Port: LANGGRAPH_API_PORT (default 8124) → 8000
 Includes: PostgreSQL, Redis, MongoDB
 
 ## Deployment Options
@@ -158,7 +160,8 @@ The server will be available at `http://localhost:8123`
 - `LANGSMITH_API_KEY`: LangSmith API key (optional)
 
 **UI Clients**:
-- `LANGGRAPH_SERVER_URL`: URL of LangGraph server (default: `http://localhost:8123`)
+- `LANGGRAPH_API_HOST`: Host URL of the LangGraph server (default: `http://127.0.0.1`)
+- `LANGGRAPH_API_PORT`: Port of the LangGraph server (default: `8123`)
 
 ### Server URL by Environment
 

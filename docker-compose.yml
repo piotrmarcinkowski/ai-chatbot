@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
       target: ${BACKEND_BUILD_TARGET}
     ports:
-      - "${BACKEND_PORT}:8000"
+      - "${LANGGRAPH_API_PORT}:8000"
     depends_on:
       mongodb:
         condition: service_started
@@ -25,7 +25,8 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/${MONGO_DB}
       - REDIS_URI=${REDIS_URI}
       - DATABASE_URI=${DATABASE_URI}
-      - LANGGRAPH_SERVER_URL=${LANGGRAPH_SERVER_URL}
+      - LANGGRAPH_API_HOST=${LANGGRAPH_API_HOST}
+      - LANGGRAPH_API_PORT=${LANGGRAPH_API_PORT}
     networks:
       - app_network
     profiles: ["dev", "devcontainer", "prod"]

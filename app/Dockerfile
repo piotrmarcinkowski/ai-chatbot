@@ -25,10 +25,8 @@ COPY . .
 
 RUN pip3 install langgraph-cli python-dotenv
 
-# LangGraph server port (default is 8123)
-EXPOSE 8123
-
-HEALTHCHECK CMD curl --fail http://localhost:8123/ok || exit 1
+# LangGraph server port (internal)
+EXPOSE 8000
 
 WORKDIR /app/src
 
@@ -36,7 +34,7 @@ USER ${USER}
 
 # Note: 'langgraph up' requires Docker-in-Docker which doesn't work in containers
 # 'langgraph dev' is suitable for fast deployments when run with --no-reload
-CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8123", "--no-browser", "--no-reload"]
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8000", "--no-browser", "--no-reload"]
 
 # Development image (used in devcontainer)
 FROM ai-chatbot-base AS ai-chatbot-devcontainer
@@ -52,8 +50,8 @@ RUN pip3 install langgraph-cli[inmem] --upgrade
 # In devcontainer image the source directory is not copied to the image - mount it from the host instead
 # while configuring the devcontainer
 
-# LangGraph server port (for development with 'langgraph dev')
-EXPOSE 2024
+# LangGraph server port (internal)
+EXPOSE 8000
 # Debug port for VSCode remote debugging
 EXPOSE 5678
 
