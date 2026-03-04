@@ -39,8 +39,10 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/ui/cli/chatbot_cli.py",
+      "python": "/home/chatbot/.venvs/ui-cli/bin/python",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/ui/cli",
+      "preLaunchTask": "Setup UI CLI venv"
     },
     {
       "name": "UI - Streamlit",
@@ -51,8 +53,10 @@
           "run",
           "app.py"
       ],
+      "python": "/home/chatbot/.venvs/ui-streamlit/bin/python",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/ui/streamlit",
+      "preLaunchTask": "Setup UI Streamlit venv"
     }
   ]
 }
